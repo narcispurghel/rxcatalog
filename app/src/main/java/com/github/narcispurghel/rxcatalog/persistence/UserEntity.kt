@@ -20,6 +20,7 @@ data class UserEntity(
     val userId: Uuid,
     val email: String,
     val displayName: String,
+    val passwordHash: String,
     val role: UserRole,
     val isActive: Boolean = true,
     val createdAt: Long,
