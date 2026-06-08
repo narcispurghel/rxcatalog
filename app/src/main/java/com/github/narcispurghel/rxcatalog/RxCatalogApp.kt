@@ -232,15 +232,27 @@ private fun AppNavHost(
                 ),
         ) { entry ->
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
-                MedicineDetailsScreen(
-                    medicineId = entry.requireStringArgument("medicineId"),
-                    onOpenLeaflet = { leafletId ->
-                        navController.navigateSingleTop(AppRoutes.leafletRoute(leafletId))
-                    },
-                    onSubmit = { medicineId ->
-                        navController.navigateSingleTop(AppRoutes.submitRoute(medicineId = medicineId))
-                    },
-                )
+                val medicineId = entry.stringArgument("medicineId")
+                if (medicineId == null) {
+                    InvalidRouteRedirect(
+                        navController = navController,
+                        snackbarHostState = snackbarHostState,
+                        message = "Unable to open that medicine.",
+                        fallbackRoute = AppRoutes.searchRoute(),
+                    )
+                } else {
+                    MedicineDetailsScreen(
+                        medicineId = medicineId,
+                        onOpenLeaflet = { leafletId ->
+                            navController.navigateSingleTop(AppRoutes.leafletRoute(leafletId))
+                        },
+                        onSubmit = { selectedMedicineId ->
+                            navController.navigateSingleTop(
+                                AppRoutes.submitRoute(medicineId = selectedMedicineId),
+                            )
+                        },
+                    )
+                }
             }
         }
 
@@ -250,7 +262,17 @@ private fun AppNavHost(
             deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.LEAFLET_DEEP_LINK }),
         ) { entry ->
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
-                LeafletDetailsScreen(leafletId = entry.requireStringArgument("leafletId"))
+                val leafletId = entry.stringArgument("leafletId")
+                if (leafletId == null) {
+                    InvalidRouteRedirect(
+                        navController = navController,
+                        snackbarHostState = snackbarHostState,
+                        message = "Unable to open that leaflet.",
+                        fallbackRoute = AppRoutes.searchRoute(),
+                    )
+                } else {
+                    LeafletDetailsScreen(leafletId = leafletId)
+                }
             }
         }
 
@@ -300,10 +322,20 @@ private fun AppNavHost(
         composable(
             route = AppRoutes.REVIEW,
             arguments = listOf(navArgument("submissionId") { type = NavType.StringType }),
-            deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.SUBMISSION_DEEP_LINK }),
+            deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.REVIEW_DEEP_LINK }),
         ) { entry ->
             EnsureReviewerAccess(navController, snackbarHostState, sessionState) {
-                ReviewSubmissionScreen(submissionId = entry.requireStringArgument("submissionId"))
+                val submissionId = entry.stringArgument("submissionId")
+                if (submissionId == null) {
+                    InvalidRouteRedirect(
+                        navController = navController,
+                        snackbarHostState = snackbarHostState,
+                        message = "Unable to open that review.",
+                        fallbackRoute = AppRoutes.PENDING_APPROVALS,
+                    )
+                } else {
+                    ReviewSubmissionScreen(submissionId = submissionId)
+                }
             }
         }
 
@@ -319,6 +351,19 @@ private fun AppNavHost(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun InvalidRouteRedirect(
+    navController: NavController,
+    snackbarHostState: SnackbarHostState,
+    message: String,
+    fallbackRoute: String,
+) {
+    LaunchedEffect(navController, fallbackRoute, message) {
+        snackbarHostState.showSnackbar(message)
+        navController.navigateSingleTop(fallbackRoute)
     }
 }
 
@@ -411,11 +456,6 @@ private fun NavController.navigateTopLevel(destination: TopLevelDestination) {
 
 private fun NavBackStackEntry.stringArgument(name: String): String? =
     arguments?.getString(name)?.takeIf { it.isNotBlank() }
-
-private fun NavBackStackEntry.requireStringArgument(name: String): String =
-    requireNotNull(stringArgument(name)) {
-        "Missing route argument: $name"
-    }
 
 private fun String?.isTopLevelRouteSelected(destinationRoute: String): Boolean {
     if (this == null) return false
