@@ -16,7 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -28,6 +28,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.github.narcispurghel.rxcatalog.auth.AuthNavigationEvent
 import com.github.narcispurghel.rxcatalog.auth.AuthenticatedUser
 import com.github.narcispurghel.rxcatalog.auth.LoginViewModel
@@ -49,6 +50,9 @@ import com.github.narcispurghel.rxcatalog.ui.screens.ReviewSubmissionScreen
 import com.github.narcispurghel.rxcatalog.ui.screens.SearchScreen
 import com.github.narcispurghel.rxcatalog.ui.screens.SplashScreen
 import com.github.narcispurghel.rxcatalog.ui.screens.SubmitLeafletScreen
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.MySubmissionsViewModel
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.PendingApprovalsViewModel
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchViewModel
 import com.github.narcispurghel.rxcatalog.ui.theme.RxCatalogTheme
 import kotlinx.coroutines.flow.collectLatest
 
@@ -210,10 +214,13 @@ private fun AppNavHost(
                         defaultValue = ""
                     },
                 ),
-        ) { entry ->
+        ) {
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
+                val viewModel: SearchViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 SearchScreen(
-                    query = entry.stringArgument("query"),
+                    state = uiState,
+                    onQueryChanged = viewModel::onQueryChanged,
                     onMedicine = { medicineId ->
                         navController.navigateSingleTop(AppRoutes.medicineRoute(medicineId))
                     },
@@ -301,7 +308,10 @@ private fun AppNavHost(
 
         composable(AppRoutes.MY_SUBMISSIONS) {
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
+                val viewModel: MySubmissionsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 MySubmissionsScreen(
+                    state = uiState,
                     onEdit = { submissionId ->
                         navController.navigateSingleTop(AppRoutes.submitRoute(submissionId = submissionId))
                     },
@@ -311,7 +321,10 @@ private fun AppNavHost(
 
         composable(AppRoutes.PENDING_APPROVALS) {
             EnsureReviewerAccess(navController, snackbarHostState, sessionState) {
+                val viewModel: PendingApprovalsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 PendingApprovalsScreen(
+                    state = uiState,
                     onReview = { submissionId ->
                         navController.navigateSingleTop(AppRoutes.reviewRoute(submissionId))
                     },
