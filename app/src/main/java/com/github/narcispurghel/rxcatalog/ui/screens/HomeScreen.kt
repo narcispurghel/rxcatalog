@@ -15,13 +15,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.github.narcispurghel.rxcatalog.auth.AuthenticatedUser
+import com.github.narcispurghel.rxcatalog.auth.SessionState
 import com.github.narcispurghel.rxcatalog.common.UserRole
 import com.github.narcispurghel.rxcatalog.ui.components.common.ActionCard
-import com.github.narcispurghel.rxcatalog.ui.session.DemoSessionState
 
 @Composable
 fun HomeScreen(
-    sessionState: DemoSessionState,
+    sessionState: SessionState,
+    currentUser: AuthenticatedUser?,
     onSearch: () -> Unit,
     onSubmit: () -> Unit,
     onApprovals: () -> Unit,
@@ -41,8 +43,9 @@ fun HomeScreen(
                         modifier = Modifier.padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(text = "Authenticated: ${sessionState.isAuthenticated}")
-                        Text(text = "Role: ${sessionState.role?.name ?: "none"}")
+                        Text(text = "Authenticated: ${sessionState is SessionState.Authenticated}")
+                        Text(text = "Display name: ${currentUser?.displayName ?: "Unavailable"}")
+                        Text(text = "Role: ${currentUser?.role?.name ?: "none"}")
                     }
                 }
             }
@@ -64,7 +67,7 @@ fun HomeScreen(
                     onClick = onSubmit,
                 )
             }
-            if (sessionState.role in setOf(UserRole.DOCTOR, UserRole.PHARMACIST)) {
+            if (currentUser?.role in setOf(UserRole.DOCTOR, UserRole.PHARMACIST)) {
                 item {
                     ActionCard(
                         title = "Review queue",

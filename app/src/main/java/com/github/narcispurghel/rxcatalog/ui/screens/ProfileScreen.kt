@@ -9,12 +9,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.github.narcispurghel.rxcatalog.auth.AuthenticatedUser
+import com.github.narcispurghel.rxcatalog.auth.SessionState
 import com.github.narcispurghel.rxcatalog.ui.components.common.DetailHeader
-import com.github.narcispurghel.rxcatalog.ui.session.DemoSessionState
 
 @Composable
 fun ProfileScreen(
-    sessionState: DemoSessionState,
+    sessionState: SessionState,
+    currentUser: AuthenticatedUser?,
+    isLoggingOut: Boolean,
+    logoutError: String?,
+    onDismissLogoutError: () -> Unit,
     onLogout: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -28,20 +33,62 @@ fun ProfileScreen(
         ) {
             DetailHeader(
                 title = "Session profile",
-                subtitle = "This will later be backed by DataStore session state.",
+                subtitle = "Live account and role details from the active session source.",
             )
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(text = "Logged in: ${sessionState.isAuthenticated}")
-                    Text(text = "Role: ${sessionState.role?.name ?: "none"}")
+                    Text(text = "Authenticated: ${sessionState is SessionState.Authenticated}")
+                    Text(text = "Display name: ${currentUser?.displayName ?: "Unavailable"}")
+                    Text(text = "Email: ${currentUser?.email ?: "Unavailable"}")
+                    Text(text = "Role: ${currentUser?.role?.name ?: "none"}")
                 }
             }
-            Button(onClick = onLogout) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
-                Spacer(modifier = Modifier.padding(start = 8.dp))
+            if (logoutError != null) {
+                ElevatedCard(
+                    colors =
+                        CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                        ),
+                ) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = logoutError,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = onDismissLogoutError) {
+                            Text("Dismiss")
+                        }
+                    }
+                }
+            }
+            Button(
+                onClick = onLogout,
+                enabled = !isLoggingOut,
+            ) {
+                if (isLoggingOut) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                } else {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = null,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
                 Text("Logout")
             }
         }
