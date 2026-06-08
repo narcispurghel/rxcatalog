@@ -6,6 +6,12 @@ plugins {
     alias(libs.plugins.hilt.android)
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
+    }
+}
+
 android {
     namespace = "com.github.narcispurghel.rxcatalog"
     compileSdk {

@@ -5,36 +5,62 @@ package com.github.narcispurghel.rxcatalog
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Login
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.navigation.*
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
+import com.github.narcispurghel.rxcatalog.auth.AuthNavigationEvent
+import com.github.narcispurghel.rxcatalog.auth.AuthenticatedUser
+import com.github.narcispurghel.rxcatalog.auth.LoginViewModel
+import com.github.narcispurghel.rxcatalog.auth.RegisterViewModel
+import com.github.narcispurghel.rxcatalog.auth.SessionState
+import com.github.narcispurghel.rxcatalog.auth.SessionViewModel
 import com.github.narcispurghel.rxcatalog.common.UserRole
 import com.github.narcispurghel.rxcatalog.navigation.AppRoutes
 import com.github.narcispurghel.rxcatalog.navigation.TopLevelDestination
 import com.github.narcispurghel.rxcatalog.navigation.authenticatedDestinations
-import com.github.narcispurghel.rxcatalog.ui.screens.*
-import com.github.narcispurghel.rxcatalog.ui.session.DemoSessionState
+import com.github.narcispurghel.rxcatalog.ui.screens.AuthScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.HomeScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.LeafletDetailsScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.MedicineDetailsScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.MySubmissionsScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.PendingApprovalsScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.ProfileScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.ReviewSubmissionScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.SearchScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.SplashScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.SubmitLeafletScreen
 import com.github.narcispurghel.rxcatalog.ui.theme.RxCatalogTheme
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun RxCatalogApp() {
     RxCatalogTheme {
         val navController = rememberNavController()
         val snackbarHostState = remember { SnackbarHostState() }
-        val sessionState = rememberDemoSessionState()
+        val sessionViewModel: SessionViewModel = hiltViewModel()
+        val sessionUiState = sessionViewModel.uiState
+        val sessionState = sessionUiState.sessionState
+        val currentUser = sessionUiState.currentUser
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = backStackEntry?.destination?.route
 
@@ -45,11 +71,11 @@ fun RxCatalogApp() {
                         .fillMaxSize()
                         .padding(outerPadding),
             ) {
-                if (sessionState.isAuthenticated) {
+                if (sessionState is SessionState.Authenticated) {
                     NavigationSuiteScaffold(
                         navigationSuiteItems = {
                             authenticatedDestinations
-                                .filter { it.isVisibleFor(sessionState.role) }
+                                .filter { it.isVisibleFor(currentUser?.role) }
                                 .forEach { destination ->
                                     item(
                                         icon = {
@@ -63,9 +89,7 @@ fun RxCatalogApp() {
                                             currentRoute.isTopLevelRouteSelected(
                                                 destination.route,
                                             ),
-                                        onClick = {
-                                            navController.navigateTopLevel(destination)
-                                        },
+                                        onClick = { navController.navigateTopLevel(destination) },
                                     )
                                 }
                         },
@@ -74,6 +98,8 @@ fun RxCatalogApp() {
                             navController = navController,
                             snackbarHostState = snackbarHostState,
                             sessionState = sessionState,
+                            currentUser = currentUser,
+                            sessionViewModel = sessionViewModel,
                         )
                     }
                 } else {
@@ -81,6 +107,8 @@ fun RxCatalogApp() {
                         navController = navController,
                         snackbarHostState = snackbarHostState,
                         sessionState = sessionState,
+                        currentUser = currentUser,
+                        sessionViewModel = sessionViewModel,
                     )
                 }
             }
@@ -92,7 +120,9 @@ fun RxCatalogApp() {
 private fun AppNavHost(
     navController: NavHostController,
     snackbarHostState: SnackbarHostState,
-    sessionState: DemoSessionState,
+    sessionState: SessionState,
+    currentUser: AuthenticatedUser?,
+    sessionViewModel: SessionViewModel,
     modifier: Modifier = Modifier,
 ) {
     NavHost(
@@ -109,54 +139,48 @@ private fun AppNavHost(
 
         composable(AppRoutes.LOGIN) {
             EnsureUnauthenticated(navController, snackbarHostState, sessionState) {
+                val viewModel: LoginViewModel = hiltViewModel()
+                LaunchedEffect(viewModel) {
+                    viewModel.events.collectLatest { event ->
+                        if (event is AuthNavigationEvent.NavigateHome) {
+                            navController.navigateSingleTop(AppRoutes.HOME)
+                        }
+                    }
+                }
                 AuthScreen(
-                    title = "Welcome back",
-                    subtitle = "Route shell with splash, guards, and adaptive navigation.",
-                    primaryAction = "Sign in as user",
-                    secondaryAction = "Sign in as doctor",
-                    tertiaryAction = "Sign in as pharmacist",
-                    icon = Icons.AutoMirrored.Filled.Login,
-                    onPrimary = {
-                        sessionState.signIn(UserRole.USER)
-                        navController.navigateSingleTop(AppRoutes.HOME)
-                    },
-                    onSecondary = {
-                        sessionState.signIn(UserRole.DOCTOR)
-                        navController.navigateSingleTop(AppRoutes.HOME)
-                    },
-                    onTertiary = {
-                        sessionState.signIn(UserRole.PHARMACIST)
-                        navController.navigateSingleTop(AppRoutes.HOME)
-                    },
+                    state = viewModel.uiState,
+                    onDisplayNameChanged = viewModel::onDisplayNameChanged,
+                    onEmailChanged = viewModel::onEmailChanged,
+                    onPasswordChanged = viewModel::onPasswordChanged,
+                    onConfirmPasswordChanged = viewModel::onConfirmPasswordChanged,
+                    onRoleSelected = viewModel::onRoleSelected,
+                    onSubmit = viewModel::submit,
                     onSwitch = { navController.navigateSingleTop(AppRoutes.REGISTER) },
-                    switchLabel = "Switch to register",
+                    onDismissError = viewModel::clearSubmitError,
                 )
             }
         }
 
         composable(AppRoutes.REGISTER) {
             EnsureUnauthenticated(navController, snackbarHostState, sessionState) {
+                val viewModel: RegisterViewModel = hiltViewModel()
+                LaunchedEffect(viewModel) {
+                    viewModel.events.collectLatest { event ->
+                        if (event is AuthNavigationEvent.NavigateHome) {
+                            navController.navigateSingleTop(AppRoutes.HOME)
+                        }
+                    }
+                }
                 AuthScreen(
-                    title = "Create account",
-                    subtitle = "Create a new account to continue.",
-                    primaryAction = "Create user account",
-                    secondaryAction = "Create doctor account",
-                    tertiaryAction = "Create pharmacist account",
-                    icon = Icons.Filled.PersonAdd,
-                    onPrimary = {
-                        sessionState.signIn(UserRole.USER)
-                        navController.navigateSingleTop(AppRoutes.HOME)
-                    },
-                    onSecondary = {
-                        sessionState.signIn(UserRole.DOCTOR)
-                        navController.navigateSingleTop(AppRoutes.HOME)
-                    },
-                    onTertiary = {
-                        sessionState.signIn(UserRole.PHARMACIST)
-                        navController.navigateSingleTop(AppRoutes.HOME)
-                    },
-                    onSwitch = { navController.popBackStack() },
-                    switchLabel = "Back to login",
+                    state = viewModel.uiState,
+                    onDisplayNameChanged = viewModel::onDisplayNameChanged,
+                    onEmailChanged = viewModel::onEmailChanged,
+                    onPasswordChanged = viewModel::onPasswordChanged,
+                    onConfirmPasswordChanged = viewModel::onConfirmPasswordChanged,
+                    onRoleSelected = viewModel::onRoleSelected,
+                    onSubmit = viewModel::submit,
+                    onSwitch = { navController.navigateSingleTop(AppRoutes.LOGIN) },
+                    onDismissError = viewModel::clearSubmitError,
                 )
             }
         }
@@ -165,11 +189,8 @@ private fun AppNavHost(
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
                 HomeScreen(
                     sessionState = sessionState,
-                    onSearch = {
-                        navController.navigateSingleTop(
-                            AppRoutes.searchRoute("aspirin"),
-                        )
-                    },
+                    currentUser = currentUser,
+                    onSearch = { navController.navigateSingleTop(AppRoutes.searchRoute("aspirin")) },
                     onSubmit = { navController.navigateSingleTop(AppRoutes.submitRoute()) },
                     onApprovals = { navController.navigateSingleTop(AppRoutes.PENDING_APPROVALS) },
                     onProfile = { navController.navigateSingleTop(AppRoutes.PROFILE) },
@@ -203,10 +224,7 @@ private fun AppNavHost(
 
         composable(
             route = AppRoutes.MEDICINE,
-            arguments =
-                listOf(
-                    navArgument("medicineId") { type = NavType.StringType },
-                ),
+            arguments = listOf(navArgument("medicineId") { type = NavType.StringType }),
             deepLinks =
                 listOf(
                     navDeepLink { uriPattern = AppRoutes.MEDICINE_DEEP_LINK },
@@ -220,9 +238,7 @@ private fun AppNavHost(
                         navController.navigateSingleTop(AppRoutes.leafletRoute(leafletId))
                     },
                     onSubmit = { medicineId ->
-                        navController.navigateSingleTop(
-                            AppRoutes.submitRoute(medicineId = medicineId),
-                        )
+                        navController.navigateSingleTop(AppRoutes.submitRoute(medicineId = medicineId))
                     },
                 )
             }
@@ -230,14 +246,8 @@ private fun AppNavHost(
 
         composable(
             route = AppRoutes.LEAFLET,
-            arguments =
-                listOf(
-                    navArgument("leafletId") { type = NavType.StringType },
-                ),
-            deepLinks =
-                listOf(
-                    navDeepLink { uriPattern = AppRoutes.LEAFLET_DEEP_LINK },
-                ),
+            arguments = listOf(navArgument("leafletId") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.LEAFLET_DEEP_LINK }),
         ) { entry ->
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
                 LeafletDetailsScreen(leafletId = entry.requireStringArgument("leafletId"))
@@ -257,10 +267,7 @@ private fun AppNavHost(
                         defaultValue = ""
                     },
                 ),
-            deepLinks =
-                listOf(
-                    navDeepLink { uriPattern = AppRoutes.SUBMISSION_DEEP_LINK },
-                ),
+            deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.SUBMISSION_DEEP_LINK }),
         ) { entry ->
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
                 SubmitLeafletScreen(
@@ -274,9 +281,7 @@ private fun AppNavHost(
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
                 MySubmissionsScreen(
                     onEdit = { submissionId ->
-                        navController.navigateSingleTop(
-                            AppRoutes.submitRoute(submissionId = submissionId),
-                        )
+                        navController.navigateSingleTop(AppRoutes.submitRoute(submissionId = submissionId))
                     },
                 )
             }
@@ -294,14 +299,8 @@ private fun AppNavHost(
 
         composable(
             route = AppRoutes.REVIEW,
-            arguments =
-                listOf(
-                    navArgument("submissionId") { type = NavType.StringType },
-                ),
-            deepLinks =
-                listOf(
-                    navDeepLink { uriPattern = AppRoutes.SUBMISSION_DEEP_LINK },
-                ),
+            arguments = listOf(navArgument("submissionId") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.SUBMISSION_DEEP_LINK }),
         ) { entry ->
             EnsureReviewerAccess(navController, snackbarHostState, sessionState) {
                 ReviewSubmissionScreen(submissionId = entry.requireStringArgument("submissionId"))
@@ -312,12 +311,11 @@ private fun AppNavHost(
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
                 ProfileScreen(
                     sessionState = sessionState,
-                    onLogout = {
-                        sessionState.signOut()
-                        navController.navigateSingleTop(AppRoutes.LOGIN) {
-                            popUpTo(AppRoutes.SPLASH) { inclusive = false }
-                        }
-                    },
+                    currentUser = currentUser,
+                    isLoggingOut = sessionViewModel.uiState.isLoggingOut,
+                    logoutError = sessionViewModel.uiState.logoutError,
+                    onDismissLogoutError = sessionViewModel::clearLogoutError,
+                    onLogout = sessionViewModel::logout,
                 )
             }
         }
@@ -328,11 +326,11 @@ private fun AppNavHost(
 private fun EnsureUnauthenticated(
     navController: NavController,
     snackbarHostState: SnackbarHostState,
-    sessionState: DemoSessionState,
+    sessionState: SessionState,
     content: @Composable () -> Unit,
 ) {
-    androidx.compose.runtime.LaunchedEffect(sessionState.isAuthenticated) {
-        if (sessionState.isAuthenticated) {
+    LaunchedEffect(sessionState) {
+        if (sessionState is SessionState.Authenticated) {
             snackbarHostState.showSnackbar("You are already signed in.")
             navController.navigateSingleTop(AppRoutes.HOME)
         }
@@ -345,11 +343,11 @@ private fun EnsureUnauthenticated(
 private fun EnsureAuthenticated(
     navController: NavController,
     snackbarHostState: SnackbarHostState,
-    sessionState: DemoSessionState,
+    sessionState: SessionState,
     content: @Composable () -> Unit,
 ) {
-    androidx.compose.runtime.LaunchedEffect(sessionState.isAuthenticated) {
-        if (!sessionState.isAuthenticated) {
+    LaunchedEffect(sessionState) {
+        if (sessionState == SessionState.Unauthenticated) {
             snackbarHostState.showSnackbar("Sign in to continue.")
             navController.navigateSingleTop(AppRoutes.LOGIN)
         }
@@ -362,19 +360,25 @@ private fun EnsureAuthenticated(
 private fun EnsureReviewerAccess(
     navController: NavController,
     snackbarHostState: SnackbarHostState,
-    sessionState: DemoSessionState,
+    sessionState: SessionState,
     content: @Composable () -> Unit,
 ) {
-    androidx.compose.runtime.LaunchedEffect(sessionState.isAuthenticated, sessionState.role) {
-        if (!sessionState.isAuthenticated) {
-            snackbarHostState.showSnackbar("Sign in to continue.")
-            navController.navigateSingleTop(AppRoutes.LOGIN)
-            return@LaunchedEffect
-        }
+    LaunchedEffect(sessionState) {
+        when (sessionState) {
+            SessionState.Loading -> Unit
+            SessionState.Unauthenticated -> {
+                snackbarHostState.showSnackbar("Sign in to continue.")
+                navController.navigateSingleTop(AppRoutes.LOGIN)
+            }
 
-        if (sessionState.role !in setOf(UserRole.DOCTOR, UserRole.PHARMACIST)) {
-            snackbarHostState.showSnackbar("This route is restricted to doctors and pharmacists.")
-            navController.navigateSingleTop(AppRoutes.HOME)
+            is SessionState.Authenticated -> {
+                if (sessionState.user.role !in setOf(UserRole.DOCTOR, UserRole.PHARMACIST)) {
+                    snackbarHostState.showSnackbar(
+                        "This route is restricted to doctors and pharmacists.",
+                    )
+                    navController.navigateSingleTop(AppRoutes.HOME)
+                }
+            }
         }
     }
 
@@ -406,9 +410,7 @@ private fun NavController.navigateTopLevel(destination: TopLevelDestination) {
 }
 
 private fun NavBackStackEntry.stringArgument(name: String): String? =
-    arguments?.getString(name)?.takeIf {
-        it.isNotBlank()
-    }
+    arguments?.getString(name)?.takeIf { it.isNotBlank() }
 
 private fun NavBackStackEntry.requireStringArgument(name: String): String =
     requireNotNull(stringArgument(name)) {
@@ -420,12 +422,3 @@ private fun String?.isTopLevelRouteSelected(destinationRoute: String): Boolean {
     val normalized = destinationRoute.substringBefore("?")
     return this == destinationRoute || this.startsWith(normalized)
 }
-
-@Composable
-private fun rememberDemoSessionState(): DemoSessionState =
-    rememberSaveable(saver = DemoSessionState.Saver) {
-        DemoSessionState(
-            initialAuthenticated = false,
-            initialRole = null,
-        )
-    }

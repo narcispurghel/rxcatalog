@@ -5,7 +5,6 @@ package com.github.narcispurghel.rxcatalog.persistence
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
@@ -13,7 +12,7 @@ import kotlin.uuid.Uuid
 
 @Dao
 interface UserDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert
     suspend fun insert(user: UserEntity)
 
     @Upsert
@@ -25,8 +24,20 @@ interface UserDao {
     @Query("select * from users where userId = :userId limit 1")
     suspend fun getById(userId: Uuid): UserEntity?
 
+    @Query("select * from users where userId = :userId and isActive = 1 limit 1")
+    suspend fun getActiveById(userId: Uuid): UserEntity?
+
     @Query("select * from users where userId = :userId limit 1")
     fun observeById(userId: Uuid): Flow<UserEntity?>
+
+    @Query("select * from users where userId = :userId and isActive = 1 limit 1")
+    fun observeActiveById(userId: Uuid): Flow<UserEntity?>
+
+    @Query("select * from users where lower(trim(email)) = :normalizedEmail limit 1")
+    suspend fun getByNormalizedEmail(normalizedEmail: String): UserEntity?
+
+    @Query("select * from users where lower(trim(email)) = :normalizedEmail limit 1")
+    fun observeByNormalizedEmail(normalizedEmail: String): Flow<UserEntity?>
 
     @Query("select * from users order by displayName collate nocase asc")
     fun observeAll(): Flow<List<UserEntity>>
