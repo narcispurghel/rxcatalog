@@ -21,20 +21,21 @@ internal fun buildCatalogSeedData(
     passwordHasher: PasswordHasher,
     now: Long = System.currentTimeMillis(),
 ): CatalogSeedData {
-    val doctorUserId = Uuid.parse("11111111-1111-1111-1111-111111111111")
-    val pharmacistUserId = Uuid.parse("22222222-2222-2222-2222-222222222222")
-    val patientUserId = Uuid.parse("33333333-3333-3333-3333-333333333333")
+    val doctorUserId = Uuid.parse(CatalogSeedIds.DOCTOR_USER_ID)
+    val pharmacistUserId = Uuid.parse(CatalogSeedIds.PHARMACIST_USER_ID)
+    val patientUserId = Uuid.parse(CatalogSeedIds.PATIENT_USER_ID)
 
-    val aspirinMedicineId = Uuid.parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-    val paracetamolMedicineId = Uuid.parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-    val ibuprofenMedicineId = Uuid.parse("cccccccc-cccc-cccc-cccc-cccccccccccc")
-    val amoxicillinMedicineId = Uuid.parse("dddddddd-dddd-dddd-dddd-dddddddddddd")
+    val aspirinMedicineId = Uuid.parse(CatalogSeedIds.ASPIRIN_MEDICINE_ID)
+    val paracetamolMedicineId = Uuid.parse(CatalogSeedIds.PARACETAMOL_MEDICINE_ID)
+    val ibuprofenMedicineId = Uuid.parse(CatalogSeedIds.IBUPROFEN_MEDICINE_ID)
+    val amoxicillinMedicineId = Uuid.parse(CatalogSeedIds.AMOXICILLIN_MEDICINE_ID)
 
-    val draftSubmissionId = Uuid.parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
-    val pendingAspirinSubmissionId = Uuid.parse("ffffffff-ffff-ffff-ffff-ffffffffffff")
-    val pendingParacetamolSubmissionId = Uuid.parse("99999999-9999-9999-9999-999999999999")
-    val approvedIbuprofenSubmissionId = Uuid.parse("88888888-8888-8888-8888-888888888888")
-    val rejectedAmoxicillinSubmissionId = Uuid.parse("77777777-7777-7777-7777-777777777777")
+    val draftSubmissionId = Uuid.parse(CatalogSeedIds.DRAFT_SUBMISSION_ID)
+    val pendingAspirinSubmissionId = Uuid.parse(CatalogSeedIds.PENDING_ASPIRIN_SUBMISSION_ID)
+    val pendingParacetamolSubmissionId =
+        Uuid.parse(CatalogSeedIds.PENDING_PARACETAMOL_SUBMISSION_ID)
+    val approvedIbuprofenSubmissionId = Uuid.parse(CatalogSeedIds.APPROVED_IBUPROFEN_SUBMISSION_ID)
+    val rejectedAmoxicillinSubmissionId = Uuid.parse(CatalogSeedIds.REJECTED_AMOXICILLIN_SUBMISSION_ID)
 
     return CatalogSeedData(
         users =
@@ -189,4 +190,3 @@ internal fun buildCatalogSeedData(
 private const val MINUTE = 60_000L
 private const val HOUR = 60 * MINUTE
 private const val DAY = 24 * HOUR
-
