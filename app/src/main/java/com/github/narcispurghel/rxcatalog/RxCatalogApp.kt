@@ -50,6 +50,8 @@ import com.github.narcispurghel.rxcatalog.ui.screens.ReviewSubmissionScreen
 import com.github.narcispurghel.rxcatalog.ui.screens.SearchScreen
 import com.github.narcispurghel.rxcatalog.ui.screens.SplashScreen
 import com.github.narcispurghel.rxcatalog.ui.screens.SubmitLeafletScreen
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.LeafletDetailsViewModel
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.MedicineDetailsViewModel
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.MySubmissionsViewModel
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.PendingApprovalsViewModel
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchViewModel
@@ -239,6 +241,8 @@ private fun AppNavHost(
                 ),
         ) { entry ->
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
+                val viewModel: MedicineDetailsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val medicineId = entry.stringArgument("medicineId")
                 if (medicineId == null) {
                     InvalidRouteRedirect(
@@ -249,13 +253,17 @@ private fun AppNavHost(
                     )
                 } else {
                     MedicineDetailsScreen(
-                        medicineId = medicineId,
-                        onOpenLeaflet = { leafletId ->
-                            navController.navigateSingleTop(AppRoutes.leafletRoute(leafletId))
+                        state = uiState,
+                        onOpenLeaflet = {
+                            uiState.medicine?.approvedLeaflet?.let { leaflet ->
+                                navController.navigateSingleTop(
+                                    AppRoutes.leafletRoute(leaflet.leafletId),
+                                )
+                            }
                         },
-                        onSubmit = { selectedMedicineId ->
+                        onSubmit = {
                             navController.navigateSingleTop(
-                                AppRoutes.submitRoute(medicineId = selectedMedicineId),
+                                AppRoutes.submitRoute(medicineId = medicineId),
                             )
                         },
                     )
@@ -269,6 +277,8 @@ private fun AppNavHost(
             deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.LEAFLET_DEEP_LINK }),
         ) { entry ->
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
+                val viewModel: LeafletDetailsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val leafletId = entry.stringArgument("leafletId")
                 if (leafletId == null) {
                     InvalidRouteRedirect(
@@ -278,7 +288,7 @@ private fun AppNavHost(
                         fallbackRoute = AppRoutes.searchRoute(),
                     )
                 } else {
-                    LeafletDetailsScreen(leafletId = leafletId)
+                    LeafletDetailsScreen(state = uiState)
                 }
             }
         }
