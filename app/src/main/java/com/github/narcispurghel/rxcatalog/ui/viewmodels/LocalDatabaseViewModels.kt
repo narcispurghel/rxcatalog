@@ -10,7 +10,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.narcispurghel.rxcatalog.auth.AuthRepository
 import com.github.narcispurghel.rxcatalog.catalog.CatalogRepository
+import com.github.narcispurghel.rxcatalog.catalog.LeafletDetailsItem
 import com.github.narcispurghel.rxcatalog.catalog.MedicineListItem
+import com.github.narcispurghel.rxcatalog.catalog.MedicineDetailsItem
 import com.github.narcispurghel.rxcatalog.catalog.PendingApprovalListItem
 import com.github.narcispurghel.rxcatalog.catalog.SubmissionListItem
 import com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals.ApprovalQueueItem
@@ -19,12 +21,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.uuid.Uuid
 
 data class SearchUiState(
     val query: String = "",
@@ -48,6 +57,18 @@ class SearchViewModel @Inject constructor(
     private val catalogRepository: CatalogRepository,
 ) : ViewModel() {
     private val query = MutableStateFlow(savedStateHandle.get<String>("query").orEmpty())
+
+    init {
+        query
+            .debounce(250)
+            .map { it.trim() }
+            .onEach { trimmedQuery ->
+                runCatching {
+                    catalogRepository.refreshMedicines(trimmedQuery)
+                }
+            }
+            .launchIn(viewModelScope)
+    }
 
     val uiState: StateFlow<SearchUiState> =
         query.flatMapLatest { currentQuery ->
@@ -82,9 +103,143 @@ class SearchViewModel @Inject constructor(
             initialValue = SearchUiState(query = query.value, isLoading = true),
         )
 
-    fun onQueryChanged(value: String) {
+fun onQueryChanged(value: String) {
         query.value = value
     }
+}
+
+data class MedicineDetailsUiState(
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null,
+    val medicine: MedicineDetailsItem? = null,
+)
+
+@HiltViewModel
+class MedicineDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
+    private val catalogRepository: CatalogRepository,
+) : ViewModel() {
+    private val medicineId =
+        runCatching {
+            Uuid.parse(savedStateHandle.get<String>("medicineId").orEmpty())
+        }.getOrNull()
+    private val refreshCompleted = MutableStateFlow(false)
+
+    private val detailsFlow: Flow<MedicineDetailsUiState> =
+        if (medicineId == null) {
+            flowOf(
+                MedicineDetailsUiState(
+                    isLoading = false,
+                    errorMessage = "Unable to open that medicine.",
+                ),
+                )
+        } else {
+            catalogRepository.observeMedicineDetails(medicineId)
+                .combine(refreshCompleted) { medicine, refreshDone ->
+                    MedicineDetailsUiState(
+                        isLoading = medicine == null && !refreshDone,
+                        medicine = medicine,
+                        errorMessage =
+                            if (medicine == null && refreshDone) {
+                                "Medicine details are unavailable."
+                            } else {
+                                null
+                            },
+                    )
+                }
+                .onStart {
+                    emit(MedicineDetailsUiState())
+                    viewModelScope.launch {
+                        runCatching {
+                            catalogRepository.refreshMedicineDetails(medicineId)
+                        }.also {
+                            refreshCompleted.value = true
+                        }
+                    }
+                }
+                .catch {
+                    emit(
+                        MedicineDetailsUiState(
+                            isLoading = false,
+                            errorMessage = "Unable to load medicine details.",
+                        ),
+                    )
+                }
+        }
+
+    val uiState: StateFlow<MedicineDetailsUiState> =
+        detailsFlow.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = MedicineDetailsUiState(),
+        )
+}
+
+data class LeafletDetailsUiState(
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null,
+    val leaflet: LeafletDetailsItem? = null,
+)
+
+@HiltViewModel
+class LeafletDetailsViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
+    private val catalogRepository: CatalogRepository,
+) : ViewModel() {
+    private val leafletId =
+        runCatching {
+            Uuid.parse(savedStateHandle.get<String>("leafletId").orEmpty())
+        }.getOrNull()
+    private val refreshCompleted = MutableStateFlow(false)
+
+    private val detailsFlow: Flow<LeafletDetailsUiState> =
+        if (leafletId == null) {
+            flowOf(
+                LeafletDetailsUiState(
+                    isLoading = false,
+                    errorMessage = "Unable to open that leaflet.",
+                ),
+                )
+        } else {
+            catalogRepository.observeLeafletDetails(leafletId)
+                .combine(refreshCompleted) { leaflet, refreshDone ->
+                    LeafletDetailsUiState(
+                        isLoading = leaflet == null && !refreshDone,
+                        leaflet = leaflet,
+                        errorMessage =
+                            if (leaflet == null && refreshDone) {
+                                "Approved leaflet details are unavailable."
+                            } else {
+                                null
+                            },
+                    )
+                }
+                .onStart {
+                    emit(LeafletDetailsUiState())
+                    viewModelScope.launch {
+                        runCatching {
+                            catalogRepository.refreshLeafletDetails(leafletId)
+                        }.also {
+                            refreshCompleted.value = true
+                        }
+                    }
+                }
+                .catch {
+                    emit(
+                        LeafletDetailsUiState(
+                            isLoading = false,
+                            errorMessage = "Unable to load leaflet details.",
+                        ),
+                    )
+                }
+        }
+
+    val uiState: StateFlow<LeafletDetailsUiState> =
+        detailsFlow.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = LeafletDetailsUiState(),
+        )
 }
 
 data class MySubmissionsUiState(

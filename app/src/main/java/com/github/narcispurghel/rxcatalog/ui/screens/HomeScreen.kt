@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.auth.AuthenticatedUser
 import com.github.narcispurghel.rxcatalog.auth.SessionState
 import com.github.narcispurghel.rxcatalog.common.UserRole
+import com.github.narcispurghel.rxcatalog.catalog.CatalogSeedIds
 import com.github.narcispurghel.rxcatalog.ui.components.common.ActionCard
 
 @Composable
@@ -93,7 +94,7 @@ fun HomeScreen(
                     subtitle = "Jump to a medicine details route.",
                     label = "Open medicine",
                     icon = Icons.Filled.Info,
-                    onClick = { onMedicine("med-001") },
+                    onClick = { onMedicine(CatalogSeedIds.ASPIRIN_MEDICINE_ID) },
                 )
             }
         }
