@@ -6,20 +6,30 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.ui.components.common.DetailHeader
-import com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals.*
+import com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals.ApprovalQueueCard
+import com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals.EmptyQueueCard
+import com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals.QueueFilters
+import com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals.ReviewerHero
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.PendingApprovalsUiState
 
 @Composable
-fun PendingApprovalsScreen(onReview: (String) -> Unit) {
-    val queue = sampleApprovalQueue()
-
+fun PendingApprovalsScreen(
+    state: PendingApprovalsUiState,
+    onReview: (String) -> Unit,
+) {
+    val queue = state.queue
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(title = { Text("Pending approvals") })
         LazyColumn(
@@ -36,24 +46,70 @@ fun PendingApprovalsScreen(onReview: (String) -> Unit) {
             item {
                 QueueFilters()
             }
-            item {
-                DetailHeader(
-                    title = "Review queue",
-                    subtitle = "Prioritize urgent submissions and keep the waiting list moving.",
-                )
-            }
-            if (queue.isEmpty()) {
-                item {
-                    EmptyQueueCard()
+            when {
+                state.errorMessage != null -> {
+                    item {
+                        QueueErrorCard(message = state.errorMessage)
+                    }
                 }
-            } else {
-                items(queue) { item ->
-                    ApprovalQueueCard(
-                        item = item,
-                        onReview = onReview,
-                    )
+
+                state.isLoading -> {
+                    item {
+                        QueueLoadingCard()
+                    }
+                }
+
+                queue.isEmpty() -> {
+                    item {
+                        EmptyQueueCard()
+                    }
+                }
+
+                else -> {
+                    item {
+                        DetailHeader(
+                            title = "Review queue",
+                            subtitle =
+                                "Prioritize urgent submissions and keep the waiting list moving.",
+                        )
+                    }
+                    items(
+                        items = queue,
+                        key = { it.submissionId },
+                    ) { item ->
+                        ApprovalQueueCard(
+                            item = item,
+                            onReview = onReview,
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun QueueLoadingCard() {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(text = "Loading approvals", style = MaterialTheme.typography.titleMedium)
+            Text(text = "Reading the local review queue from Room.")
+        }
+    }
+}
+
+@Composable
+private fun QueueErrorCard(message: String) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(text = "Approvals unavailable", style = MaterialTheme.typography.titleMedium)
+            Text(text = message)
         }
     }
 }

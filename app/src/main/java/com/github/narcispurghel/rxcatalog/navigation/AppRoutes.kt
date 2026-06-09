@@ -19,6 +19,7 @@ object AppRoutes {
     const val MEDICINE_DEEP_LINK = "rxcatalog://medicine/{medicineId}"
     const val LEAFLET_DEEP_LINK = "rxcatalog://leaflet/{leafletId}"
     const val SUBMISSION_DEEP_LINK = "rxcatalog://submission/{submissionId}"
+    const val REVIEW_DEEP_LINK = "rxcatalog://review/{submissionId}"
     const val WEB_MEDICINE_DEEP_LINK = "https://rxcatalog.local/medicines/{medicineId}"
 
     fun searchRoute(query: String? = null): String {
@@ -57,6 +58,8 @@ object AppRoutes {
     fun reviewRoute(submissionId: String): String = "review/$submissionId"
 
     fun submissionDeepLink(submissionId: String): String = "rxcatalog://submission/$submissionId"
+
+    fun reviewDeepLink(submissionId: String): String = "rxcatalog://review/$submissionId"
 
     fun medicineDeepLink(medicineId: String): String = "rxcatalog://medicine/$medicineId"
 

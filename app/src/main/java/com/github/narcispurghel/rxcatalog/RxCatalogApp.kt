@@ -16,7 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -28,6 +28,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.github.narcispurghel.rxcatalog.auth.AuthNavigationEvent
 import com.github.narcispurghel.rxcatalog.auth.AuthenticatedUser
 import com.github.narcispurghel.rxcatalog.auth.LoginViewModel
@@ -49,6 +50,9 @@ import com.github.narcispurghel.rxcatalog.ui.screens.ReviewSubmissionScreen
 import com.github.narcispurghel.rxcatalog.ui.screens.SearchScreen
 import com.github.narcispurghel.rxcatalog.ui.screens.SplashScreen
 import com.github.narcispurghel.rxcatalog.ui.screens.SubmitLeafletScreen
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.MySubmissionsViewModel
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.PendingApprovalsViewModel
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchViewModel
 import com.github.narcispurghel.rxcatalog.ui.theme.RxCatalogTheme
 import kotlinx.coroutines.flow.collectLatest
 
@@ -210,10 +214,13 @@ private fun AppNavHost(
                         defaultValue = ""
                     },
                 ),
-        ) { entry ->
+        ) {
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
+                val viewModel: SearchViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 SearchScreen(
-                    query = entry.stringArgument("query"),
+                    state = uiState,
+                    onQueryChanged = viewModel::onQueryChanged,
                     onMedicine = { medicineId ->
                         navController.navigateSingleTop(AppRoutes.medicineRoute(medicineId))
                     },
@@ -232,15 +239,27 @@ private fun AppNavHost(
                 ),
         ) { entry ->
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
-                MedicineDetailsScreen(
-                    medicineId = entry.requireStringArgument("medicineId"),
-                    onOpenLeaflet = { leafletId ->
-                        navController.navigateSingleTop(AppRoutes.leafletRoute(leafletId))
-                    },
-                    onSubmit = { medicineId ->
-                        navController.navigateSingleTop(AppRoutes.submitRoute(medicineId = medicineId))
-                    },
-                )
+                val medicineId = entry.stringArgument("medicineId")
+                if (medicineId == null) {
+                    InvalidRouteRedirect(
+                        navController = navController,
+                        snackbarHostState = snackbarHostState,
+                        message = "Unable to open that medicine.",
+                        fallbackRoute = AppRoutes.searchRoute(),
+                    )
+                } else {
+                    MedicineDetailsScreen(
+                        medicineId = medicineId,
+                        onOpenLeaflet = { leafletId ->
+                            navController.navigateSingleTop(AppRoutes.leafletRoute(leafletId))
+                        },
+                        onSubmit = { selectedMedicineId ->
+                            navController.navigateSingleTop(
+                                AppRoutes.submitRoute(medicineId = selectedMedicineId),
+                            )
+                        },
+                    )
+                }
             }
         }
 
@@ -250,7 +269,17 @@ private fun AppNavHost(
             deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.LEAFLET_DEEP_LINK }),
         ) { entry ->
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
-                LeafletDetailsScreen(leafletId = entry.requireStringArgument("leafletId"))
+                val leafletId = entry.stringArgument("leafletId")
+                if (leafletId == null) {
+                    InvalidRouteRedirect(
+                        navController = navController,
+                        snackbarHostState = snackbarHostState,
+                        message = "Unable to open that leaflet.",
+                        fallbackRoute = AppRoutes.searchRoute(),
+                    )
+                } else {
+                    LeafletDetailsScreen(leafletId = leafletId)
+                }
             }
         }
 
@@ -279,7 +308,10 @@ private fun AppNavHost(
 
         composable(AppRoutes.MY_SUBMISSIONS) {
             EnsureAuthenticated(navController, snackbarHostState, sessionState) {
+                val viewModel: MySubmissionsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 MySubmissionsScreen(
+                    state = uiState,
                     onEdit = { submissionId ->
                         navController.navigateSingleTop(AppRoutes.submitRoute(submissionId = submissionId))
                     },
@@ -289,7 +321,10 @@ private fun AppNavHost(
 
         composable(AppRoutes.PENDING_APPROVALS) {
             EnsureReviewerAccess(navController, snackbarHostState, sessionState) {
+                val viewModel: PendingApprovalsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 PendingApprovalsScreen(
+                    state = uiState,
                     onReview = { submissionId ->
                         navController.navigateSingleTop(AppRoutes.reviewRoute(submissionId))
                     },
@@ -300,10 +335,20 @@ private fun AppNavHost(
         composable(
             route = AppRoutes.REVIEW,
             arguments = listOf(navArgument("submissionId") { type = NavType.StringType }),
-            deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.SUBMISSION_DEEP_LINK }),
+            deepLinks = listOf(navDeepLink { uriPattern = AppRoutes.REVIEW_DEEP_LINK }),
         ) { entry ->
             EnsureReviewerAccess(navController, snackbarHostState, sessionState) {
-                ReviewSubmissionScreen(submissionId = entry.requireStringArgument("submissionId"))
+                val submissionId = entry.stringArgument("submissionId")
+                if (submissionId == null) {
+                    InvalidRouteRedirect(
+                        navController = navController,
+                        snackbarHostState = snackbarHostState,
+                        message = "Unable to open that review.",
+                        fallbackRoute = AppRoutes.PENDING_APPROVALS,
+                    )
+                } else {
+                    ReviewSubmissionScreen(submissionId = submissionId)
+                }
             }
         }
 
@@ -319,6 +364,19 @@ private fun AppNavHost(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun InvalidRouteRedirect(
+    navController: NavController,
+    snackbarHostState: SnackbarHostState,
+    message: String,
+    fallbackRoute: String,
+) {
+    LaunchedEffect(navController, fallbackRoute, message) {
+        snackbarHostState.showSnackbar(message)
+        navController.navigateSingleTop(fallbackRoute)
     }
 }
 
@@ -411,11 +469,6 @@ private fun NavController.navigateTopLevel(destination: TopLevelDestination) {
 
 private fun NavBackStackEntry.stringArgument(name: String): String? =
     arguments?.getString(name)?.takeIf { it.isNotBlank() }
-
-private fun NavBackStackEntry.requireStringArgument(name: String): String =
-    requireNotNull(stringArgument(name)) {
-        "Missing route argument: $name"
-    }
 
 private fun String?.isTopLevelRouteSelected(destinationRoute: String): Boolean {
     if (this == null) return false
