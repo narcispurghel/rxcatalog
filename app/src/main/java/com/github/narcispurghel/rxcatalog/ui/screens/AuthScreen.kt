@@ -1,8 +1,11 @@
 package com.github.narcispurghel.rxcatalog.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.PersonAdd
@@ -18,6 +21,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.auth.AuthFormState
 import com.github.narcispurghel.rxcatalog.auth.AuthMode
@@ -38,35 +42,34 @@ fun AuthScreen(
     val isRegister = state.mode == AuthMode.REGISTER
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
-    Column(
+    Box(
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+                .verticalScroll(scrollState)
+                .padding(horizontal = 20.dp, vertical = 24.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 480.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Icon(
-                    imageVector = if (isRegister) Icons.Filled.PersonAdd else Icons.AutoMirrored.Filled.Login,
-                    contentDescription = null,
-                )
-                Text(
-                    text = if (isRegister) "Create account" else "Welcome back",
-                    style = MaterialTheme.typography.headlineMedium,
-                )
-                Text(
-                    text =
-                        if (isRegister) {
-                            "Register to submit or review medicine leaflets."
-                        } else {
-                            "Sign in to browse the catalog and manage submissions."
-                        },
+                AuthHeader(
+                    isRegister = isRegister,
                 )
 
                 if (isRegister) {
@@ -124,12 +127,14 @@ fun AuthScreen(
                 }
 
                 state.submitError?.let { error ->
-                    ElevatedCard(
+                    Card(
                         colors =
-                            CardDefaults.elevatedCardColors(
+                            CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer,
                             ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
                         modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     ) {
                         Row(
                             modifier =
@@ -143,6 +148,7 @@ fun AuthScreen(
                                 text = error,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyMedium,
                             )
                             TextButton(onClick = onDismissError) {
                                 Text("Dismiss")
@@ -172,9 +178,67 @@ fun AuthScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !state.isSubmitting,
                 ) {
-                    Text(if (isRegister) "Back to login" else "Switch to register")
+                    Text(if (isRegister) "Back to sign in" else "Create account")
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AuthHeader(isRegister: Boolean) {
+    val title = if (isRegister) "Create your RxCatalog account" else "Sign in to RxCatalog"
+    val subtitle =
+        if (isRegister) {
+            "Browse medicines, submit leaflet updates, or review verified information."
+        } else {
+            "Search medicines, manage submissions, and review verified information."
+        }
+    val icon =
+        if (isRegister) {
+            Icons.Filled.PersonAdd
+        } else {
+            Icons.AutoMirrored.Filled.Login
+        }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.primary,
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .padding(12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                )
+            }
+        }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
@@ -197,6 +261,8 @@ private fun AuthTextField(
         isError = isError,
         supportingText = errorText?.let { { Text(it) } },
         keyboardOptions = keyboardOptions,
+        shape = MaterialTheme.shapes.medium,
+        colors = authTextFieldColors(),
     )
 }
 
@@ -224,6 +290,7 @@ private fun PasswordField(
                 keyboardType = KeyboardType.Password,
                 imeAction = imeAction,
             ),
+        shape = MaterialTheme.shapes.medium,
         visualTransformation =
             if (visible) {
                 VisualTransformation.None
@@ -235,6 +302,7 @@ private fun PasswordField(
                 Text(if (visible) "Hide" else "Show")
             }
         },
+        colors = authTextFieldColors(),
     )
 }
 
@@ -257,9 +325,37 @@ private fun RoleSelector(
                 FilterChip(
                     selected = role == selectedRole,
                     onClick = { onRoleSelected(role) },
-                    label = { Text(role.name.lowercase().replaceFirstChar(Char::titlecase)) },
+                    label = { Text(role.toDisplayLabel()) },
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                 )
             }
         }
     }
 }
+
+@Composable
+private fun authTextFieldColors() =
+    OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        focusedLabelColor = MaterialTheme.colorScheme.primary,
+        focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+        focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
+        cursorColor = MaterialTheme.colorScheme.primary,
+        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+        errorContainerColor = MaterialTheme.colorScheme.errorContainer,
+    )
+
+private fun UserRole.toDisplayLabel(): String =
+    when (this) {
+        UserRole.USER -> "User"
+        UserRole.DOCTOR -> "Doctor reviewer"
+        UserRole.PHARMACIST -> "Pharmacist reviewer"
+    }
