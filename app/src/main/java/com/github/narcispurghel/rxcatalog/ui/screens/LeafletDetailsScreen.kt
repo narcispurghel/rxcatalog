@@ -2,69 +2,272 @@
 
 package com.github.narcispurghel.rxcatalog.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Card
-import androidx.compose.material3.Text
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.github.narcispurghel.rxcatalog.ui.components.common.DetailHeader
+import com.github.narcispurghel.rxcatalog.catalog.LeafletDetailsItem
+import com.github.narcispurghel.rxcatalog.ui.components.common.MetadataRow
+import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChip
+import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.LeafletDetailsUiState
 
 @Composable
 fun LeafletDetailsScreen(state: LeafletDetailsUiState) {
+    val leaflet = state.leaflet
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(title = { Text("Leaflet") })
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(20.dp),
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            DetailHeader(
-                title = state.leaflet?.title ?: "Leaflet details",
-                subtitle =
-                    state.leaflet?.medicineName?.let { "Approved leaflet for $it." }
-                        ?: "Read the approved leaflet content for this medicine.",
+            item {
+                LeafletHeroCard(leaflet = leaflet)
+            }
+
+            when {
+                state.errorMessage != null -> {
+                    item {
+                        LeafletFeedbackCard(
+                            title = "Leaflet unavailable",
+                            body =
+                                "We could not confirm the verified leaflet details right now. " +
+                                    state.errorMessage,
+                        )
+                    }
+                }
+
+                state.isLoading -> {
+                    item {
+                        LeafletFeedbackCard(
+                            title = "Loading verified leaflet",
+                            body =
+                                "Checking the latest approved leaflet content, version, and review timestamp.",
+                        )
+                    }
+                }
+
+                leaflet != null -> {
+                    item {
+                        LeafletRecordCard(leaflet = leaflet)
+                    }
+                    item {
+                        LeafletContentCard(leaflet = leaflet)
+                    }
+                }
+
+                else -> {
+                    item {
+                        LeafletFeedbackCard(
+                            title = "No verified leaflet found",
+                            body =
+                                "A verified leaflet has not been recorded for this medicine in the local catalog.",
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LeafletHeroCard(leaflet: LeafletDetailsItem?) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.primaryContainer,
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = leaflet?.medicineName ?: "Leaflet details",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                    Text(
+                        text =
+                            leaflet?.title
+                                ?: "Verified leaflet content and approval timing will appear here.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f),
+                    )
+                }
+                StatusChip(
+                    label = if (leaflet != null) "Verified leaflet" else "Awaiting leaflet",
+                    tone =
+                        if (leaflet != null) {
+                            StatusChipTone.APPROVED
+                        } else {
+                            StatusChipTone.PENDING
+                        },
+                )
+            }
+            Text(
+                text =
+                    if (leaflet != null) {
+                        "Read the approved leaflet version for ${leaflet.medicineName}."
+                    } else {
+                        "Review the verified leaflet title, version, approval timing, and content."
+                    },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f),
             )
-            if (state.isLoading) {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(text = "Loading leaflet details", style = MaterialTheme.typography.titleMedium)
-                        Text(text = "Fetching the latest approved leaflet from the local database.")
-                    }
+        }
+    }
+}
+
+@Composable
+private fun LeafletRecordCard(leaflet: LeafletDetailsItem) {
+    RecordCard {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Verified,
+                        contentDescription = null,
+                        modifier = Modifier.padding(10.dp),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Verified leaflet record",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "This is the approved leaflet currently available in the catalog.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-            state.errorMessage?.let { message ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(text = "Leaflet unavailable", style = MaterialTheme.typography.titleMedium)
-                        Text(text = message)
-                    }
+
+            MetadataRow(label = "Leaflet title", value = leaflet.title)
+            MetadataRow(label = "Medicine", value = leaflet.medicineName)
+            MetadataRow(label = "Last approved", value = leaflet.approvedAtLabel)
+            MetadataRow(label = "Version", value = "v${leaflet.version}")
+        }
+    }
+}
+
+@Composable
+private fun LeafletContentCard(leaflet: LeafletDetailsItem) {
+    RecordCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Description,
+                        contentDescription = null,
+                        modifier = Modifier.padding(10.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Leaflet content",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Review the current verified wording before making a new submission.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-            state.leaflet?.let { leaflet ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(text = leaflet.medicineName, style = MaterialTheme.typography.titleMedium)
-                        Text(text = "Version ${leaflet.version}")
-                        Text(text = leaflet.approvedAtLabel)
-                        Text(text = leaflet.content)
-                    }
-                }
-            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Text(
+                text = leaflet.content,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecordCard(content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Box(modifier = Modifier.padding(20.dp)) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun LeafletFeedbackCard(
+    title: String,
+    body: String,
+) {
+    RecordCard {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

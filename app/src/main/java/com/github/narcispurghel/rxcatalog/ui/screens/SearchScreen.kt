@@ -2,15 +2,26 @@
 
 package com.github.narcispurghel.rxcatalog.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.github.narcispurghel.rxcatalog.ui.components.common.MetadataRow
+import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChip
+import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchResultItem
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchUiState
 
@@ -22,33 +33,73 @@ fun SearchScreen(
     onSubmit: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Search") })
+        TopAppBar(title = { Text("Search medicines") })
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                        ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                ) {
                     Column(
                         modifier = Modifier.padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Text(text = "Search medicines", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            text = "Search medicines",
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                        Text(
+                            text = "Search by medicine name, brand, ingredient, or ATC code.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         OutlinedTextField(
                             value = state.query,
                             onValueChange = onQueryChanged,
-                            label = { Text("Query") },
+                            label = { Text("Medicine or ATC code") },
                             modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Search,
+                                    contentDescription = null,
+                                )
+                            },
                             trailingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.Search,
                                     contentDescription = null,
                                 )
                             },
+                            singleLine = true,
+                            shape = MaterialTheme.shapes.medium,
+                            colors =
+                                OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    focusedLabelColor = MaterialTheme.colorScheme.primary,
+                                    focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                                    focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
+                                    cursorColor = MaterialTheme.colorScheme.primary,
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    errorContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                ),
                         )
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
                             Button(onClick = onSubmit) { Text("Submit leaflet") }
                             OutlinedButton(
                                 enabled = state.medicines.isNotEmpty() && !state.isLoading,
@@ -75,7 +126,10 @@ fun SearchScreen(
 
                 state.medicines.isEmpty() -> {
                     item {
-                        SearchEmptyCard(query = state.query)
+                        SearchEmptyCard(
+                            query = state.query,
+                            onSubmit = onSubmit,
+                        )
                     }
                 }
 
@@ -100,32 +154,101 @@ private fun MedicineSearchCard(
     medicine: SearchResultItem,
     onMedicine: (String) -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = medicine.canonicalName,
-                    style = MaterialTheme.typography.titleMedium,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    medicine.brandName
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { brandName ->
+                            Text(
+                                text = brandName,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    Text(
+                        text = medicine.canonicalName,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    val ingredientLine =
+                        medicine.activeIngredient
+                            ?.takeIf { it.isNotBlank() }
+                            ?: "Ingredient not listed"
+                    Text(
+                        text = ingredientLine,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                StatusChip(
+                    label = medicine.leafletStatusLabel(),
+                    tone = medicine.leafletStatusTone(),
                 )
-                if (!medicine.brandName.isNullOrBlank()) {
-                    Text(text = medicine.brandName)
-                }
+            }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                DataPill(
+                    text = medicine.atcCode?.takeIf { it.isNotBlank() } ?: "ATC code unavailable",
+                )
                 if (!medicine.activeIngredient.isNullOrBlank()) {
-                    Text(text = "Active ingredient: ${medicine.activeIngredient}")
+                    DataPill(text = "Ingredient listed")
                 }
-                if (!medicine.atcCode.isNullOrBlank()) {
-                    Text(text = "ATC code: ${medicine.atcCode}")
-                }
-                medicine.description?.let {
-                    Text(text = it)
-                }
+            }
+            medicine.description?.takeIf { it.isNotBlank() }?.let { description ->
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetadataRow(
+                    label = "Brand",
+                    value = medicine.brandName?.takeIf { it.isNotBlank() } ?: "Not specified",
+                )
+                MetadataRow(
+                    label = "ATC code",
+                    value = medicine.atcCode?.takeIf { it.isNotBlank() } ?: "Unavailable",
+                )
+                MetadataRow(
+                    label = "Leaflet",
+                    value =
+                        if (medicine.description.isNullOrBlank()) {
+                            "Not listed"
+                        } else {
+                            "Details available"
+                        },
+                )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = { onMedicine(medicine.medicineId) }) {
-                    Text("Open")
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Open record")
                 }
             }
         }
@@ -134,46 +257,149 @@ private fun MedicineSearchCard(
 
 @Composable
 private fun SearchLoadingCard() {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(text = "Loading medicines", style = MaterialTheme.typography.titleMedium)
-            Text(text = "Reading the local database for matching medicines.")
-        }
+    SearchStateCard(
+        icon = Icons.Filled.Sync,
+        title = "Loading medicines",
+        message = "Checking local records for medicines and leaflet details.",
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(20.dp),
+            strokeWidth = 2.dp,
+        )
     }
 }
 
 @Composable
 private fun SearchErrorCard(message: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    SearchStateCard(
+        icon = Icons.Filled.ErrorOutline,
+        title = "Search unavailable",
+        message = message,
+    )
+}
+
+@Composable
+private fun SearchEmptyCard(
+    query: String,
+    onSubmit: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(text = "Search unavailable", style = MaterialTheme.typography.titleMedium)
-            Text(text = message)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Text(text = "No medicines found", style = MaterialTheme.typography.titleMedium)
+            }
+            Text(
+                text =
+                    if (query.isBlank()) {
+                        "No medicine records are available yet. You can add a leaflet submission to start review."
+                    } else {
+                        "No local matches for \"$query\". Try a medicine name, active ingredient, or ATC code."
+                    },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedButton(onClick = onSubmit) {
+                Text("Submit leaflet")
+            }
         }
     }
 }
 
 @Composable
-private fun SearchEmptyCard(query: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
+private fun SearchStateCard(
+    icon: ImageVector,
+    title: String,
+    message: String,
+    trailingContent: @Composable (() -> Unit)? = null,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Row(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(text = "No medicines found", style = MaterialTheme.typography.titleMedium)
-            Text(
-                text =
-                    if (query.isBlank()) {
-                        "The local database does not contain any medicines yet."
-                    } else {
-                        "No local matches for \"$query\"."
-                    },
-            )
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.primary,
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Box(
+                    modifier = Modifier.size(40.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(text = title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            trailingContent?.invoke()
         }
     }
 }
+
+@Composable
+private fun DataPill(text: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        shape = MaterialTheme.shapes.extraLarge,
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+}
+
+private fun SearchResultItem.leafletStatusLabel(): String =
+    if (description.isNullOrBlank()) {
+        "Leaflet unavailable"
+    } else {
+        "Leaflet listed"
+    }
+
+private fun SearchResultItem.leafletStatusTone(): StatusChipTone =
+    if (description.isNullOrBlank()) {
+        StatusChipTone.DRAFT
+    } else {
+        StatusChipTone.REVIEWER
+    }
