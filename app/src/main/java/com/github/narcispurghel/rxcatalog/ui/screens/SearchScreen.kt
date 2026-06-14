@@ -2,7 +2,6 @@
 
 package com.github.narcispurghel.rxcatalog.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,14 +39,9 @@ fun SearchScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                Card(
+                OutlinedCard(
                     modifier = Modifier.fillMaxWidth(),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                        ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),
@@ -154,14 +148,9 @@ private fun MedicineSearchCard(
     medicine: SearchResultItem,
     onMedicine: (String) -> Unit,
 ) {
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.extraLarge,
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -283,14 +272,9 @@ private fun SearchEmptyCard(
     query: String,
     onSubmit: () -> Unit,
 ) {
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.extraLarge,
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -330,64 +314,36 @@ private fun SearchStateCard(
     message: String,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = MaterialTheme.shapes.extraLarge,
     ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.primary,
-                shape = MaterialTheme.shapes.medium,
-            ) {
-                Box(
-                    modifier = Modifier.size(40.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                    )
-                }
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        ListItem(
+            leadingContent = {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
                 )
-            }
-            trailingContent?.invoke()
-        }
+            },
+            headlineContent = {
+                Text(text = title)
+            },
+            supportingContent = {
+                Text(text = message)
+            },
+            trailingContent = {
+                trailingContent?.invoke()
+            },
+        )
     }
 }
 
 @Composable
 private fun DataPill(text: String) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        shape = MaterialTheme.shapes.extraLarge,
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.labelMedium,
-        )
-    }
+    SuggestionChip(
+        onClick = { },
+        label = { Text(text) },
+    )
 }
 
 private fun SearchResultItem.leafletStatusLabel(): String =

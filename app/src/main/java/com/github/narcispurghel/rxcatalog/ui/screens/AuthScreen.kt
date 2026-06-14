@@ -1,6 +1,5 @@
 package com.github.narcispurghel.rxcatalog.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -52,17 +51,12 @@ fun AuthScreen(
                 .padding(horizontal = 20.dp, vertical = 24.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Card(
+        OutlinedCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .widthIn(max = 480.dp),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            shape = MaterialTheme.shapes.extraLarge,
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -127,14 +121,9 @@ fun AuthScreen(
                 }
 
                 state.submitError?.let { error ->
-                    Card(
-                        colors =
-                            CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                            ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
+                    OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
                     ) {
                         Row(
                             modifier =
@@ -146,7 +135,6 @@ fun AuthScreen(
                         ) {
                             Text(
                                 text = error,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.weight(1f),
                                 style = MaterialTheme.typography.bodyMedium,
                             )
@@ -206,24 +194,12 @@ private fun AuthHeader(isRegister: Boolean) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.primary,
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .padding(12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                )
-            }
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -326,13 +302,6 @@ private fun RoleSelector(
                     selected = role == selectedRole,
                     onClick = { onRoleSelected(role) },
                     label = { Text(role.toDisplayLabel()) },
-                    colors =
-                        FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
                 )
             }
         }

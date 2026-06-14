@@ -7,14 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.NavigationDrawerItemDefaults
-import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
@@ -64,6 +61,7 @@ import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchViewModel
 import com.github.narcispurghel.rxcatalog.ui.theme.RxCatalogTheme
 import kotlinx.coroutines.flow.collectLatest
 
+@Preview(showSystemUi = true)
 @Composable
 fun RxCatalogApp() {
     RxCatalogTheme {
@@ -79,34 +77,6 @@ fun RxCatalogApp() {
             authenticatedDestinations
                 .firstOrNull { currentRoute.isTopLevelRouteSelected(it.route) }
                 ?.route
-        val authenticatedNavigationColors =
-            NavigationSuiteDefaults.itemColors(
-                navigationBarItemColors =
-                    NavigationBarItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                navigationRailItemColors =
-                    NavigationRailItemDefaults.colors(
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                navigationDrawerItemColors =
-                    NavigationDrawerItemDefaults.colors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        unselectedContainerColor = Color.Transparent,
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-            )
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -135,7 +105,6 @@ fun RxCatalogApp() {
                                         label = { Text(destination.label) },
                                         selected = isSelected,
                                         onClick = { navController.navigateTopLevel(destination) },
-                                        colors = authenticatedNavigationColors,
                                     )
                                 }
                         },

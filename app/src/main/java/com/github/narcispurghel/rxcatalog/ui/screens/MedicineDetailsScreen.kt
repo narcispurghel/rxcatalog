@@ -2,7 +2,6 @@
 
 package com.github.narcispurghel.rxcatalog.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,13 +18,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -115,10 +113,9 @@ fun MedicineDetailsScreen(
 
 @Composable
 private fun MedicineHeroCard(medicine: MedicineDetailsItem?) {
-    Surface(
+    ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = MaterialTheme.shapes.extraLarge,
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -137,7 +134,6 @@ private fun MedicineHeroCard(medicine: MedicineDetailsItem?) {
                         text = medicine?.canonicalName ?: "Medicine details",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                     Text(
                         text =
@@ -145,7 +141,7 @@ private fun MedicineHeroCard(medicine: MedicineDetailsItem?) {
                                 ?: medicine?.activeIngredient
                                 ?: "Verified leaflet history and clinical metadata will appear here.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 StatusChip(
@@ -165,7 +161,7 @@ private fun MedicineHeroCard(medicine: MedicineDetailsItem?) {
                         ?: "Review the medicine identity, active ingredient, ATC metadata, and " +
                             "verified leaflet status.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -220,17 +216,11 @@ private fun LeafletStateCard(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = MaterialTheme.shapes.medium,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Verified,
-                            contentDescription = null,
-                            modifier = Modifier.padding(10.dp),
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Filled.Verified,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             text = "Leaflet status",
@@ -334,13 +324,9 @@ private fun MedicineActionsCard(
 
 @Composable
 private fun RecordCard(content: @Composable () -> Unit) {
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = MaterialTheme.shapes.extraLarge,
     ) {
         Box(modifier = Modifier.padding(20.dp)) {
             content()
