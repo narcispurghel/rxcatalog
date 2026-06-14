@@ -245,7 +245,7 @@ private fun PreviewTheme(
 	darkTheme: Boolean = isSystemInDarkTheme(),
 	content: @Composable () -> Unit,
 ) {
-	RxCatalogTheme(darkTheme = darkTheme, dynamicColor = false, content = content)
+	RxCatalogTheme(darkTheme = darkTheme, content = content)
 }
 
 @Preview(
