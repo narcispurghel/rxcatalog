@@ -11,17 +11,9 @@ val RxSuccess = Color(0xFF16A34A)
 val RxSuccessContainerLight = Color(0xFFDCFCE7)
 val RxSuccessContainerDark = Color(0xFF14532D)
 
-val RxWarning = Color(0xFFD97706)
-val RxWarningContainerLight = Color(0xFFFFEDD5)
-val RxWarningContainerDark = Color(0xFF7C2D12)
-
 val RxError = Color(0xFFDC2626)
 val RxErrorContainerLight = Color(0xFFFEE2E2)
 val RxErrorContainerDark = Color(0xFF7F1D1D)
-
-val RxDraft = Color(0xFF64748B)
-val RxDraftContainerLight = Color(0xFFE2E8F0)
-val RxDraftContainerDark = Color(0xFF334155)
 
 val RxBackgroundLight = Color(0xFFF8FAFC)
 val RxSurfaceLight = Color(0xFFFFFFFF)

@@ -2,8 +2,8 @@ package com.github.narcispurghel.rxcatalog.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -78,9 +78,6 @@ private val LightColorScheme =
         scrim = Color.Black,
     )
 
-val ColorScheme.surfaceMuted: Color
-    get() = surfaceVariant
-
 @Composable
 fun RxCatalogTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -102,7 +99,7 @@ fun RxCatalogTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        shapes = RxCatalogShapes,
+        shapes = Shapes(),
         content = content,
     )
 }
