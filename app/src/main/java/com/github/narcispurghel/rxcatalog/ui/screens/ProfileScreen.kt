@@ -35,7 +35,10 @@ fun ProfileScreen(
                 title = "Session profile",
                 subtitle = "Live account and role details from the active session source.",
             )
-            Card(modifier = Modifier.fillMaxWidth()) {
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+            ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -47,11 +50,9 @@ fun ProfileScreen(
                 }
             }
             if (logoutError != null) {
-                ElevatedCard(
-                    colors =
-                        CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                        ),
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ) {
                     Row(
                         modifier =
@@ -62,7 +63,6 @@ fun ProfileScreen(
                     ) {
                         Text(
                             text = logoutError,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
                             modifier = Modifier.weight(1f),
                         )
                         TextButton(onClick = onDismissLogoutError) {

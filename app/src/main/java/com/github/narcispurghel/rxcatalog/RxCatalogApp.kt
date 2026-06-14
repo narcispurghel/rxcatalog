@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -16,6 +17,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
@@ -58,6 +61,7 @@ import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchViewModel
 import com.github.narcispurghel.rxcatalog.ui.theme.RxCatalogTheme
 import kotlinx.coroutines.flow.collectLatest
 
+@Preview(showSystemUi = true)
 @Composable
 fun RxCatalogApp() {
     RxCatalogTheme {
@@ -69,8 +73,15 @@ fun RxCatalogApp() {
         val currentUser = sessionUiState.currentUser
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = backStackEntry?.destination?.route
+        val selectedTopLevelRoute =
+            authenticatedDestinations
+                .firstOrNull { currentRoute.isTopLevelRouteSelected(it.route) }
+                ?.route
 
-        Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { outerPadding ->
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+        ) { outerPadding ->
             Box(
                 modifier =
                     Modifier
@@ -83,6 +94,7 @@ fun RxCatalogApp() {
                             authenticatedDestinations
                                 .filter { it.isVisibleFor(currentUser?.role) }
                                 .forEach { destination ->
+                                    val isSelected = selectedTopLevelRoute == destination.route
                                     item(
                                         icon = {
                                             Icon(
@@ -91,10 +103,7 @@ fun RxCatalogApp() {
                                             )
                                         },
                                         label = { Text(destination.label) },
-                                        selected =
-                                            currentRoute.isTopLevelRouteSelected(
-                                                destination.route,
-                                            ),
+                                        selected = isSelected,
                                         onClick = { navController.navigateTopLevel(destination) },
                                     )
                                 }
@@ -482,6 +491,8 @@ private fun NavBackStackEntry.stringArgument(name: String): String? =
 
 private fun String?.isTopLevelRouteSelected(destinationRoute: String): Boolean {
     if (this == null) return false
-    val normalized = destinationRoute.substringBefore("?")
-    return this == destinationRoute || this.startsWith(normalized)
+    val normalizedCurrentRoute = substringBefore("?")
+    val normalizedDestinationRoute = destinationRoute.substringBefore("?")
+    return normalizedCurrentRoute == normalizedDestinationRoute ||
+        normalizedCurrentRoute.startsWith(normalizedDestinationRoute)
 }

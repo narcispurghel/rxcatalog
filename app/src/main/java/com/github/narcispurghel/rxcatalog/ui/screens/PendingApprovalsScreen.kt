@@ -7,11 +7,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -35,7 +39,7 @@ fun PendingApprovalsScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 ReviewerHero(
@@ -70,7 +74,7 @@ fun PendingApprovalsScreen(
                         DetailHeader(
                             title = "Review queue",
                             subtitle =
-                                "Prioritize urgent submissions and keep the waiting list moving.",
+                                "Prioritize urgent submissions, verify reviewer notes, and keep the queue moving.",
                         )
                     }
                     items(
@@ -90,26 +94,49 @@ fun PendingApprovalsScreen(
 
 @Composable
 private fun QueueLoadingCard() {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(text = "Loading approvals", style = MaterialTheme.typography.titleMedium)
-            Text(text = "Reading the local review queue from Room.")
-        }
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+    ) {
+        ListItem(
+            leadingContent = {
+                Icon(
+                    imageVector = Icons.Filled.HourglassTop,
+                    contentDescription = null,
+                )
+            },
+            headlineContent = {
+                Text(text = "Loading review queue")
+            },
+            supportingContent = {
+                Text(text = "Checking stored submissions and reviewer priority markers.")
+            },
+        )
     }
 }
 
 @Composable
 private fun QueueErrorCard(message: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(text = "Approvals unavailable", style = MaterialTheme.typography.titleMedium)
-            Text(text = message)
-        }
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+    ) {
+        ListItem(
+            leadingContent = {
+                Icon(
+                    imageVector = Icons.Filled.ErrorOutline,
+                    contentDescription = null,
+                )
+            },
+            headlineContent = {
+                Text(text = "Review queue unavailable")
+            },
+            supportingContent = {
+                Text(
+                    text =
+                        "Reviewer data could not be loaded. Check the local queue source and try again.\n$message",
+                )
+            },
+        )
     }
 }
