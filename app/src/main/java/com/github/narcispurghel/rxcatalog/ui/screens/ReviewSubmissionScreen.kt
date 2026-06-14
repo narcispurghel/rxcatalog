@@ -2,7 +2,6 @@
 
 package com.github.narcispurghel.rxcatalog.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,14 +40,9 @@ fun ReviewSubmissionScreen(submissionId: String) {
 
             ReviewSummaryCard(submissionId = submissionId)
 
-            Card(
+            OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                shape = MaterialTheme.shapes.extraLarge,
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -84,14 +78,9 @@ fun ReviewSubmissionScreen(submissionId: String) {
                 }
             }
 
-            Card(
+            OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                shape = MaterialTheme.shapes.extraLarge,
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -123,11 +112,6 @@ fun ReviewSubmissionScreen(submissionId: String) {
                 OutlinedButton(
                     onClick = { },
                     modifier = Modifier.weight(1f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                    colors =
-                        ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                        ),
                 ) {
                     Text("Reject")
                 }
@@ -138,14 +122,9 @@ fun ReviewSubmissionScreen(submissionId: String) {
 
 @Composable
 private fun ReviewSummaryCard(submissionId: String) {
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = MaterialTheme.shapes.extraLarge,
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

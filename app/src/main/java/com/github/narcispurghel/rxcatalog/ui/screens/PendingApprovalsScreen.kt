@@ -2,23 +2,20 @@
 
 package com.github.narcispurghel.rxcatalog.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.HourglassTop
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -97,65 +94,49 @@ fun PendingApprovalsScreen(
 
 @Composable
 private fun QueueLoadingCard() {
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = MaterialTheme.shapes.extraLarge,
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-            ) {
+        ListItem(
+            leadingContent = {
                 Icon(
                     imageVector = Icons.Filled.HourglassTop,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(10.dp),
                 )
-            }
-            Text(text = "Loading review queue", style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = "Checking stored submissions and reviewer priority markers.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+            },
+            headlineContent = {
+                Text(text = "Loading review queue")
+            },
+            supportingContent = {
+                Text(text = "Checking stored submissions and reviewer priority markers.")
+            },
+        )
     }
 }
 
 @Composable
 private fun QueueErrorCard(message: String) {
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.28f)),
+        shape = MaterialTheme.shapes.extraLarge,
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.errorContainer,
-            ) {
+        ListItem(
+            leadingContent = {
                 Icon(
                     imageVector = Icons.Filled.ErrorOutline,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(10.dp),
                 )
-            }
-            Text(text = "Review queue unavailable", style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = "Reviewer data could not be loaded. Check the local queue source and try again.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(text = message, style = MaterialTheme.typography.bodySmall)
-        }
+            },
+            headlineContent = {
+                Text(text = "Review queue unavailable")
+            },
+            supportingContent = {
+                Text(
+                    text =
+                        "Reviewer data could not be loaded. Check the local queue source and try again.\n$message",
+                )
+            },
+        )
     }
 }

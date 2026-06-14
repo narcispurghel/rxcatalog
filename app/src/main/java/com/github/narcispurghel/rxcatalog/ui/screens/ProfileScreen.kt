@@ -2,7 +2,6 @@
 
 package com.github.narcispurghel.rxcatalog.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -36,14 +35,9 @@ fun ProfileScreen(
                 title = "Session profile",
                 subtitle = "Live account and role details from the active session source.",
             )
-            Card(
+            OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                shape = MaterialTheme.shapes.extraLarge,
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
@@ -56,13 +50,9 @@ fun ProfileScreen(
                 }
             }
             if (logoutError != null) {
-                Card(
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                        ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge,
                 ) {
                     Row(
                         modifier =
@@ -73,16 +63,9 @@ fun ProfileScreen(
                     ) {
                         Text(
                             text = logoutError,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
                             modifier = Modifier.weight(1f),
                         )
-                        TextButton(
-                            onClick = onDismissLogoutError,
-                            colors =
-                                ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                ),
-                        ) {
+                        TextButton(onClick = onDismissLogoutError) {
                             Text("Dismiss")
                         }
                     }
