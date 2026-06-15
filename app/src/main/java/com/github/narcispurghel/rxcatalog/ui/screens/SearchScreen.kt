@@ -59,26 +59,21 @@ fun SearchScreen(
                         OutlinedTextField(
                             value = state.query,
                             onValueChange = onQueryChanged,
-                            label = { Text("Medicine or ATC code") },
                             modifier = Modifier.fillMaxWidth(),
+                            placeholder = {
+                                Text("Medicine or ATC code")
+                            },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.Search,
                                     contentDescription = null,
                                 )
                             },
-                            trailingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.Search,
-                                    contentDescription = null,
-                                )
-                            },
                             singleLine = true,
-                            shape = MaterialTheme.shapes.medium,
+                            shape = MaterialTheme.shapes.extraLarge,
                             colors =
                                 OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    focusedLabelColor = MaterialTheme.colorScheme.primary,
                                     focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
                                     focusedTrailingIconColor = MaterialTheme.colorScheme.primary,
                                     cursorColor = MaterialTheme.colorScheme.primary,

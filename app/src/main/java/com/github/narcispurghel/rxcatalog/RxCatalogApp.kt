@@ -17,7 +17,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -59,6 +58,8 @@ import com.github.narcispurghel.rxcatalog.ui.viewmodels.MySubmissionsViewModel
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.PendingApprovalsViewModel
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchViewModel
 import com.github.narcispurghel.rxcatalog.ui.theme.RxCatalogTheme
+import com.github.narcispurghel.rxcatalog.ui.theme.rxCatalogNavigationSuiteColors
+import com.github.narcispurghel.rxcatalog.ui.theme.rxCatalogNavigationSuiteItemColors
 import kotlinx.coroutines.flow.collectLatest
 
 @Preview(showSystemUi = true)
@@ -77,6 +78,8 @@ fun RxCatalogApp() {
             authenticatedDestinations
                 .firstOrNull { currentRoute.isTopLevelRouteSelected(it.route) }
                 ?.route
+        val navigationSuiteColors = rxCatalogNavigationSuiteColors()
+        val navigationItemColors = rxCatalogNavigationSuiteItemColors()
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -90,6 +93,7 @@ fun RxCatalogApp() {
             ) {
                 if (sessionState is SessionState.Authenticated) {
                     NavigationSuiteScaffold(
+                        navigationSuiteColors = navigationSuiteColors,
                         navigationSuiteItems = {
                             authenticatedDestinations
                                 .filter { it.isVisibleFor(currentUser?.role) }
@@ -104,6 +108,7 @@ fun RxCatalogApp() {
                                         },
                                         label = { Text(destination.label) },
                                         selected = isSelected,
+                                        colors = navigationItemColors,
                                         onClick = { navController.navigateTopLevel(destination) },
                                     )
                                 }

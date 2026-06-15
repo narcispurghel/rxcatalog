@@ -231,13 +231,12 @@ private fun AuthTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         isError = isError,
         supportingText = errorText?.let { { Text(it) } },
         keyboardOptions = keyboardOptions,
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.extraLarge,
         colors = authTextFieldColors(),
     )
 }
@@ -256,7 +255,6 @@ private fun PasswordField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         isError = isError,
@@ -266,7 +264,7 @@ private fun PasswordField(
                 keyboardType = KeyboardType.Password,
                 imeAction = imeAction,
             ),
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.extraLarge,
         visualTransformation =
             if (visible) {
                 VisualTransformation.None

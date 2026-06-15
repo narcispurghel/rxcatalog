@@ -23,153 +23,156 @@ import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
 
 @Composable
 fun ReviewSubmissionScreen(submissionId: String) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("Review submission") })
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            DetailHeader(
-                title = "Submission $submissionId",
-                subtitle = "Review the leaflet details, record reviewer notes, and decide the next clinical step.",
-            )
+	Column(modifier = Modifier.fillMaxSize()) {
+		TopAppBar(title = { Text("Review submission") })
+		Column(
+			modifier =
+				Modifier
+					.fillMaxSize()
+					.verticalScroll(rememberScrollState())
+					.padding(20.dp),
+			verticalArrangement = Arrangement.spacedBy(16.dp),
+		) {
+			DetailHeader(
+				title = "Submission $submissionId",
+				subtitle = "Review the leaflet details, record reviewer notes, and decide the next clinical step.",
+			)
 
-            ReviewSummaryCard(submissionId = submissionId)
+			ReviewSummaryCard(submissionId = submissionId)
 
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge,
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(
-                        text = "Reviewer note",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        text = "Use this field when the submission needs clarification or a revision before approval.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedTextField(
-                        value = "",
-                        onValueChange = { },
-                        label = { Text("Rejection reason") },
-                        placeholder = { Text("Add the change needed before this leaflet can be verified") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 4,
-                        colors =
-                            OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                                cursorColor = MaterialTheme.colorScheme.primary,
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                errorContainerColor = MaterialTheme.colorScheme.errorContainer,
-                            ),
-                    )
-                }
-            }
+			OutlinedCard(
+				modifier = Modifier.fillMaxWidth(),
+				shape = MaterialTheme.shapes.extraLarge,
+			) {
+				Column(
+					modifier = Modifier.padding(16.dp),
+					verticalArrangement = Arrangement.spacedBy(12.dp),
+				) {
+					Text(
+						text = "Reviewer note",
+						style = MaterialTheme.typography.titleMedium,
+					)
+					Text(
+						text = "Use this field when the submission needs clarification or a revision before approval.",
+						style = MaterialTheme.typography.bodySmall,
+						color = MaterialTheme.colorScheme.onSurfaceVariant,
+					)
+					OutlinedTextField(
+						value = "",
+						onValueChange = { },
+						placeholder = {
+							Text(
+								"Add the change needed before this leaflet can be verified",
+							)
+						},
+						modifier = Modifier.fillMaxWidth(),
+						minLines = 4,
+						shape = MaterialTheme.shapes.extraLarge,
+						colors =
+							OutlinedTextFieldDefaults.colors(
+								focusedBorderColor = MaterialTheme.colorScheme.primary,
+								cursorColor = MaterialTheme.colorScheme.primary,
+								focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+								unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+								disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+								errorContainerColor = MaterialTheme.colorScheme.errorContainer,
+							),
+					)
+				}
+			}
 
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraLarge,
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ErrorOutline,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = "Placeholder workflow: approval and rejection controls are present for layout only in this pass.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+			OutlinedCard(
+				modifier = Modifier.fillMaxWidth(),
+				shape = MaterialTheme.shapes.extraLarge,
+			) {
+				Row(
+					modifier = Modifier.padding(16.dp),
+					horizontalArrangement = Arrangement.spacedBy(12.dp),
+				) {
+					Icon(
+						imageVector = Icons.Filled.ErrorOutline,
+						contentDescription = null,
+						tint = MaterialTheme.colorScheme.onSurfaceVariant,
+					)
+					Text(
+						text = "Placeholder workflow: approval and rejection controls are present for layout only in this pass.",
+						style = MaterialTheme.typography.bodySmall,
+						color = MaterialTheme.colorScheme.onSurfaceVariant,
+					)
+				}
+			}
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Button(
-                    onClick = { },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("Approve")
-                }
-                OutlinedButton(
-                    onClick = { },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("Reject")
-                }
-            }
-        }
-    }
+			Row(
+				modifier = Modifier.fillMaxWidth(),
+				horizontalArrangement = Arrangement.spacedBy(12.dp),
+			) {
+				Button(
+					onClick = { },
+					modifier = Modifier.weight(1f),
+				) {
+					Text("Approve")
+				}
+				OutlinedButton(
+					onClick = { },
+					modifier = Modifier.weight(1f),
+				) {
+					Text("Reject")
+				}
+			}
+		}
+	}
 }
 
 @Composable
 private fun ReviewSummaryCard(submissionId: String) {
-    OutlinedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatusChip(
-                    label = "Pending review",
-                    tone = StatusChipTone.PENDING,
-                )
-                StatusChip(
-                    label = "Reviewer workflow",
-                    tone = StatusChipTone.REVIEWER,
-                )
-            }
+	OutlinedCard(
+		modifier = Modifier.fillMaxWidth(),
+		shape = MaterialTheme.shapes.extraLarge,
+	) {
+		Column(
+			modifier = Modifier.padding(16.dp),
+			verticalArrangement = Arrangement.spacedBy(12.dp),
+		) {
+			Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+				StatusChip(
+					label = "Pending review",
+					tone = StatusChipTone.PENDING,
+				)
+				StatusChip(
+					label = "Reviewer workflow",
+					tone = StatusChipTone.REVIEWER,
+				)
+			}
 
-            Text(
-                text = "Leaflet verification",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = "Submission $submissionId is ready for a clinical review pass and reviewer feedback.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+			Text(
+				text = "Leaflet verification",
+				style = MaterialTheme.typography.titleMedium,
+			)
+			Text(
+				text = "Submission $submissionId is ready for a clinical review pass and reviewer feedback.",
+				color = MaterialTheme.colorScheme.onSurfaceVariant,
+			)
 
-            HorizontalDivider()
+			HorizontalDivider()
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                MetadataRow(
-                    label = "Submission",
-                    value = submissionId,
-                )
-                MetadataRow(
-                    label = "Submitted by",
-                    value = "Placeholder reviewer handoff",
-                )
-                MetadataRow(
-                    label = "Received",
-                    value = "Pending timestamp",
-                )
-                MetadataRow(
-                    label = "Decision",
-                    value = "Approve when complete and clinically clear",
-                )
-            }
-        }
-    }
+			Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+				MetadataRow(
+					label = "Submission",
+					value = submissionId,
+				)
+				MetadataRow(
+					label = "Submitted by",
+					value = "Placeholder reviewer handoff",
+				)
+				MetadataRow(
+					label = "Received",
+					value = "Pending timestamp",
+				)
+				MetadataRow(
+					label = "Decision",
+					value = "Approve when complete and clinically clear",
+				)
+			}
+		}
+	}
 }
