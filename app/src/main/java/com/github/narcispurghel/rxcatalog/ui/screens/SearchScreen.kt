@@ -34,7 +34,10 @@ fun SearchScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(title = { Text("Search medicines") })
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -336,7 +339,8 @@ private fun SearchStateCard(
 @Composable
 private fun DataPill(text: String) {
     SuggestionChip(
-        onClick = { },
+        onClick = { /* Informational chip only. */ },
+        enabled = false,
         label = { Text(text) },
     )
 }

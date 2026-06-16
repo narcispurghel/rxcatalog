@@ -37,7 +37,10 @@ fun PendingApprovalsScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(title = { Text("Pending approvals") })
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

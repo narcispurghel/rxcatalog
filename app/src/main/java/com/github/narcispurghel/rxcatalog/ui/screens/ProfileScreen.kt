@@ -27,7 +27,8 @@ fun ProfileScreen(
         Column(
             modifier =
                 Modifier
-                    .fillMaxSize()
+                    .weight(1f)
+                    .fillMaxWidth()
                     .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {

@@ -28,14 +28,15 @@ fun ReviewSubmissionScreen(submissionId: String) {
 		Column(
 			modifier =
 				Modifier
-					.fillMaxSize()
+					.weight(1f)
+					.fillMaxWidth()
 					.verticalScroll(rememberScrollState())
 					.padding(20.dp),
 			verticalArrangement = Arrangement.spacedBy(16.dp),
 		) {
 			DetailHeader(
 				title = "Submission $submissionId",
-				subtitle = "Review the leaflet details, record reviewer notes, and decide the next clinical step.",
+				subtitle = "This screen is a review shell for the current route context. Review actions are not wired yet.",
 			)
 
 			ReviewSummaryCard(submissionId = submissionId)
@@ -53,13 +54,14 @@ fun ReviewSubmissionScreen(submissionId: String) {
 						style = MaterialTheme.typography.titleMedium,
 					)
 					Text(
-						text = "Use this field when the submission needs clarification or a revision before approval.",
+						text = "Reviewer note is shown for layout only in this pass.",
 						style = MaterialTheme.typography.bodySmall,
 						color = MaterialTheme.colorScheme.onSurfaceVariant,
 					)
 					OutlinedTextField(
 						value = "",
 						onValueChange = { },
+						enabled = false,
 						placeholder = {
 							Text(
 								"Add the change needed before this leaflet can be verified",
@@ -95,7 +97,7 @@ fun ReviewSubmissionScreen(submissionId: String) {
 						tint = MaterialTheme.colorScheme.onSurfaceVariant,
 					)
 					Text(
-						text = "Placeholder workflow: approval and rejection controls are present for layout only in this pass.",
+						text = "Approval and rejection controls are present for visual consistency only.",
 						style = MaterialTheme.typography.bodySmall,
 						color = MaterialTheme.colorScheme.onSurfaceVariant,
 					)
@@ -108,12 +110,14 @@ fun ReviewSubmissionScreen(submissionId: String) {
 			) {
 				Button(
 					onClick = { },
+					enabled = false,
 					modifier = Modifier.weight(1f),
 				) {
 					Text("Approve")
 				}
 				OutlinedButton(
 					onClick = { },
+					enabled = false,
 					modifier = Modifier.weight(1f),
 				) {
 					Text("Reject")

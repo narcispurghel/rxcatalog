@@ -23,13 +23,14 @@ fun SubmitLeafletScreen(
         Column(
             modifier =
                 Modifier
-                    .fillMaxSize()
+                    .weight(1f)
+                    .fillMaxWidth()
                     .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             DetailHeader(
-                title = "Submission shell",
-                subtitle = "Edit a pending proposal or create a new one later.",
+                title = "Submission details",
+                subtitle = "This screen currently shows route context only. Form fields will arrive with the submission flow.",
             )
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -39,14 +40,20 @@ fun SubmitLeafletScreen(
                     modifier = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(text = "submissionId: ${submissionId.orEmpty().ifBlank { "new" }}")
-                    Text(text = "medicineId: ${medicineId.orEmpty().ifBlank { "not selected" }}")
+                    Text(text = "Submission: ${submissionId.orEmpty().ifBlank { "new draft" }}")
+                    Text(text = "Medicine: ${medicineId.orEmpty().ifBlank { "not selected yet" }}")
+                    Text(
+                        text = "No editable fields are available in this screen pass.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             OutlinedButton(
                 onClick = { },
+                enabled = false,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Save placeholder") }
+            ) { Text("Continue") }
         }
     }
 }

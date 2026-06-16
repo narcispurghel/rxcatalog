@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,6 +62,8 @@ import com.github.narcispurghel.rxcatalog.ui.theme.RxCatalogTheme
 import com.github.narcispurghel.rxcatalog.ui.theme.rxCatalogNavigationSuiteColors
 import com.github.narcispurghel.rxcatalog.ui.theme.rxCatalogNavigationSuiteItemColors
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 @Preview(showSystemUi = true)
 @Composable
@@ -103,7 +106,7 @@ fun RxCatalogApp() {
                                         icon = {
                                             Icon(
                                                 imageVector = destination.icon,
-                                                contentDescription = destination.label,
+                                                contentDescription = null,
                                             )
                                         },
                                         label = { Text(destination.label) },
@@ -399,8 +402,10 @@ private fun InvalidRouteRedirect(
     fallbackRoute: String,
 ) {
     LaunchedEffect(navController, fallbackRoute, message) {
-        snackbarHostState.showSnackbar(message)
         navController.navigateSingleTop(fallbackRoute)
+        withContext(NonCancellable) {
+            snackbarHostState.showSnackbar(message)
+        }
     }
 }
 
@@ -411,14 +416,21 @@ private fun EnsureUnauthenticated(
     sessionState: SessionState,
     content: @Composable () -> Unit,
 ) {
-    LaunchedEffect(sessionState) {
-        if (sessionState is SessionState.Authenticated) {
-            snackbarHostState.showSnackbar("You are already signed in.")
-            navController.navigateSingleTop(AppRoutes.HOME)
+    val navigateHome = rememberUpdatedState(newValue = { navController.navigateSingleTop(AppRoutes.HOME) })
+    val isAuthenticated = sessionState is SessionState.Authenticated
+
+    LaunchedEffect(isAuthenticated) {
+        if (isAuthenticated) {
+            navigateHome.value()
+            withContext(NonCancellable) {
+                snackbarHostState.showSnackbar("You are already signed in.")
+            }
         }
     }
 
-    content()
+    if (!isAuthenticated) {
+        content()
+    }
 }
 
 @Composable
@@ -428,14 +440,21 @@ private fun EnsureAuthenticated(
     sessionState: SessionState,
     content: @Composable () -> Unit,
 ) {
-    LaunchedEffect(sessionState) {
-        if (sessionState == SessionState.Unauthenticated) {
-            snackbarHostState.showSnackbar("Sign in to continue.")
-            navController.navigateSingleTop(AppRoutes.LOGIN)
+    val navigateLogin = rememberUpdatedState(newValue = { navController.navigateSingleTop(AppRoutes.LOGIN) })
+    val isUnauthenticated = sessionState == SessionState.Unauthenticated
+
+    LaunchedEffect(isUnauthenticated) {
+        if (isUnauthenticated) {
+            navigateLogin.value()
+            withContext(NonCancellable) {
+                snackbarHostState.showSnackbar("Sign in to continue.")
+            }
         }
     }
 
-    content()
+    if (sessionState is SessionState.Authenticated) {
+        content()
+    }
 }
 
 @Composable
@@ -445,26 +464,40 @@ private fun EnsureReviewerAccess(
     sessionState: SessionState,
     content: @Composable () -> Unit,
 ) {
+    val navigateLogin = rememberUpdatedState(newValue = { navController.navigateSingleTop(AppRoutes.LOGIN) })
+    val navigateHome = rememberUpdatedState(newValue = { navController.navigateSingleTop(AppRoutes.HOME) })
+    val hasReviewerAccess =
+        sessionState is SessionState.Authenticated &&
+            sessionState.user.role in setOf(UserRole.DOCTOR, UserRole.PHARMACIST)
+
     LaunchedEffect(sessionState) {
         when (sessionState) {
             SessionState.Loading -> Unit
             SessionState.Unauthenticated -> {
-                snackbarHostState.showSnackbar("Sign in to continue.")
-                navController.navigateSingleTop(AppRoutes.LOGIN)
+                navigateLogin.value()
+                withContext(NonCancellable) {
+                    snackbarHostState.showSnackbar("Sign in to continue.")
+                }
             }
 
             is SessionState.Authenticated -> {
-                if (sessionState.user.role !in setOf(UserRole.DOCTOR, UserRole.PHARMACIST)) {
-                    snackbarHostState.showSnackbar(
-                        "This route is restricted to doctors and pharmacists.",
-                    )
-                    navController.navigateSingleTop(AppRoutes.HOME)
+                if (!hasReviewerAccess) {
+                    navigateHome.value()
+                    withContext(NonCancellable) {
+                        snackbarHostState.showSnackbar(
+                            "This route is restricted to doctors and pharmacists.",
+                        )
+                    }
                 }
             }
         }
     }
 
-    content()
+    if (hasReviewerAccess) {
+        content()
+    } else if (sessionState == SessionState.Loading) {
+        Unit
+    }
 }
 
 private fun NavController.navigateSingleTop(
@@ -475,6 +508,7 @@ private fun NavController.navigateSingleTop(
         launchSingleTop = true
         restoreState = true
         popUpTo(graph.findStartDestination().id) {
+            inclusive = true
             saveState = true
         }
         builder()

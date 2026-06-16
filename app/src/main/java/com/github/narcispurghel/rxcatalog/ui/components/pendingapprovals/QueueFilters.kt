@@ -30,6 +30,7 @@ private fun QueueFilterChip(
     FilterChip(
         selected = selected,
         onClick = { },
+        enabled = false,
         label = { Text(label) },
     )
 }

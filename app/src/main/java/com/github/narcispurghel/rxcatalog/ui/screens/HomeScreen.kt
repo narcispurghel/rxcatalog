@@ -61,7 +61,7 @@ fun HomeScreen(
 		modifier =
 			Modifier
 				.fillMaxSize()
-				.padding(top = 0.dp, start = 20.dp, end = 20.dp, bottom = 20.dp),
+				.padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
 		verticalArrangement = Arrangement.spacedBy(20.dp),
 	) {
 		Row(
@@ -98,12 +98,15 @@ fun HomeScreen(
 		}
 
 		Text(
-			text = "Search medicines, submit leaflet updates, and review verified information from one calm workspace.",
+			text = "Search medicines, submit leaflet updates, and review verified information from one workspace.",
 			style = MaterialTheme.typography.bodyLarge,
 			color = MaterialTheme.colorScheme.onSurfaceVariant,
 		)
 		LazyColumn(
-			modifier = Modifier.fillMaxSize(),
+			modifier =
+				Modifier
+					.weight(1f)
+					.fillMaxWidth(),
 			verticalArrangement = Arrangement.spacedBy(16.dp),
 		) {
 			item {
@@ -122,7 +125,12 @@ fun HomeScreen(
 								color = MaterialTheme.colorScheme.onSurfaceVariant,
 							)
 							Text(
-								text = "You're signed in and ready to review medicines.",
+								text =
+									if (currentUser?.role in setOf(UserRole.DOCTOR, UserRole.PHARMACIST)) {
+										"You're signed in with reviewer access."
+									} else {
+										"You're signed in and can browse medicines and submit updates."
+									},
 								style = MaterialTheme.typography.bodyMedium,
 								color = MaterialTheme.colorScheme.onSurfaceVariant,
 							)

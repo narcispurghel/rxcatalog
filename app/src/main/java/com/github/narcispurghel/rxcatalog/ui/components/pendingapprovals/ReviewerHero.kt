@@ -2,7 +2,8 @@ package com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChip
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ReviewerHero(
     pendingCount: Int,
@@ -56,7 +58,10 @@ fun ReviewerHero(
                 },
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 SummaryChip(
                     icon = Icons.Filled.Schedule,
                     label = "$pendingCount pending",

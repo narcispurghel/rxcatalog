@@ -33,6 +33,7 @@ fun StatusChip(
 	AssistChip(
 		onClick = {},
 		modifier = modifier,
+		enabled = false,
 		label = {
 			Text(
 				text = label,
