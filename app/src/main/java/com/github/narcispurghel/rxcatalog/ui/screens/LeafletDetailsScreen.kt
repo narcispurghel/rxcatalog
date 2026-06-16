@@ -3,7 +3,6 @@
 package com.github.narcispurghel.rxcatalog.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,6 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -27,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.catalog.LeafletDetailsItem
+import com.github.narcispurghel.rxcatalog.ui.components.common.RecordCard
 import com.github.narcispurghel.rxcatalog.ui.components.common.MetadataRow
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChip
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
@@ -215,18 +214,6 @@ private fun LeafletContentCard(leaflet: LeafletDetailsItem) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-        }
-    }
-}
-
-@Composable
-private fun RecordCard(content: @Composable () -> Unit) {
-    OutlinedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
-    ) {
-        Box(modifier = Modifier.padding(20.dp)) {
-            content()
         }
     }
 }
