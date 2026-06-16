@@ -6,6 +6,7 @@ import com.github.narcispurghel.rxcatalog.catalog.LeafletDetailsItem
 import com.github.narcispurghel.rxcatalog.catalog.MedicineDetailsItem
 import com.github.narcispurghel.rxcatalog.catalog.MedicineListItem
 import com.github.narcispurghel.rxcatalog.catalog.PendingApprovalListItem
+import com.github.narcispurghel.rxcatalog.catalog.SubmissionDetailsItem
 import com.github.narcispurghel.rxcatalog.catalog.SubmissionListItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -46,6 +47,8 @@ private class FakeCatalogRepository : CatalogRepository {
 
     override fun observeLeafletDetails(leafletId: Uuid): Flow<LeafletDetailsItem?> = flowOf(null)
 
+    override fun observeSubmissionDetails(submissionId: Uuid): Flow<SubmissionDetailsItem?> = flowOf(null)
+
     override fun observeSubmissionsForUser(userId: Uuid): Flow<List<SubmissionListItem>> = flowOf(emptyList())
 
     override fun observePendingApprovals(): Flow<List<PendingApprovalListItem>> = flowOf(emptyList())
@@ -62,4 +65,22 @@ private class FakeCatalogRepository : CatalogRepository {
     override suspend fun refreshMedicineDetails(medicineId: Uuid) = Unit
 
     override suspend fun refreshLeafletDetails(leafletId: Uuid) = Unit
+
+    override suspend fun saveSubmissionDraft(
+        submissionId: Uuid?,
+        medicineId: Uuid,
+        submittedByUserId: Uuid,
+        title: String,
+        content: String,
+    ): Uuid = Uuid.random()
+
+    override suspend fun submitForReview(submissionId: Uuid, reviewedAt: Long) = Unit
+
+    override suspend fun reviewSubmission(
+        submissionId: Uuid,
+        reviewerUserId: Uuid,
+        approve: Boolean,
+        notes: String?,
+        reviewedAt: Long,
+    ) = Unit
 }

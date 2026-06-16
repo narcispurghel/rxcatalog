@@ -27,3 +27,19 @@ data class LeafletDetailsItem(
     val version: Int,
     val approvedAtLabel: String,
 )
+
+data class SubmissionDetailsItem(
+    val submissionId: String,
+    val medicineId: String,
+    val medicineName: String,
+    val submittedBy: String,
+    val title: String,
+    val content: String,
+    val statusLabel: String,
+    val createdAtLabel: String,
+    val updatedAtLabel: String,
+    val reviewedAtLabel: String?,
+    val reviewedBy: String?,
+    val rejectionReason: String?,
+    val latestReviewNote: String?,
+)

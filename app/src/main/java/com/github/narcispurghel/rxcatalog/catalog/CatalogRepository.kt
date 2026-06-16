@@ -10,6 +10,8 @@ interface CatalogRepository {
 
     fun observeLeafletDetails(leafletId: Uuid): Flow<LeafletDetailsItem?>
 
+    fun observeSubmissionDetails(submissionId: Uuid): Flow<SubmissionDetailsItem?>
+
     fun observeSubmissionsForUser(userId: Uuid): Flow<List<SubmissionListItem>>
 
     fun observePendingApprovals(): Flow<List<PendingApprovalListItem>>
@@ -21,4 +23,22 @@ interface CatalogRepository {
     suspend fun refreshMedicineDetails(medicineId: Uuid)
 
     suspend fun refreshLeafletDetails(leafletId: Uuid)
+
+    suspend fun saveSubmissionDraft(
+        submissionId: Uuid?,
+        medicineId: Uuid,
+        submittedByUserId: Uuid,
+        title: String,
+        content: String,
+    ): Uuid
+
+    suspend fun submitForReview(submissionId: Uuid, reviewedAt: Long = System.currentTimeMillis())
+
+    suspend fun reviewSubmission(
+        submissionId: Uuid,
+        reviewerUserId: Uuid,
+        approve: Boolean,
+        notes: String?,
+        reviewedAt: Long = System.currentTimeMillis(),
+    )
 }

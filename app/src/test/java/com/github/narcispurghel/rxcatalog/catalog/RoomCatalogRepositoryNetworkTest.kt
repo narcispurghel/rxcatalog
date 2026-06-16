@@ -7,12 +7,17 @@ import com.github.narcispurghel.rxcatalog.auth.PasswordHasher
 import com.github.narcispurghel.rxcatalog.network.CatalogApiService
 import com.github.narcispurghel.rxcatalog.persistence.ApprovedLeafletDao
 import com.github.narcispurghel.rxcatalog.persistence.ApprovedLeafletEntity
+import com.github.narcispurghel.rxcatalog.persistence.ApprovalHistoryDao
+import com.github.narcispurghel.rxcatalog.persistence.ApprovalHistoryEntity
+import com.github.narcispurghel.rxcatalog.persistence.ApprovalAction
+import com.github.narcispurghel.rxcatalog.persistence.FavoriteDao
 import com.github.narcispurghel.rxcatalog.persistence.MedicineDao
 import com.github.narcispurghel.rxcatalog.persistence.MedicineEntity
 import com.github.narcispurghel.rxcatalog.persistence.SubmissionStatus
 import com.github.narcispurghel.rxcatalog.persistence.SubmittedLeafletDao
 import com.github.narcispurghel.rxcatalog.persistence.SubmittedLeafletEntity
 import com.github.narcispurghel.rxcatalog.persistence.SyncStatus
+import com.github.narcispurghel.rxcatalog.persistence.RxCatalogDatabase
 import com.github.narcispurghel.rxcatalog.persistence.UserDao
 import com.github.narcispurghel.rxcatalog.persistence.UserEntity
 import kotlinx.coroutines.flow.Flow
@@ -92,9 +97,11 @@ class RoomCatalogRepositoryNetworkTest {
             val medicineDao = FakeMedicineDao()
             val repository =
                 RoomCatalogRepository(
+                    database = NoOpRxCatalogDatabase(),
                     medicineDao = medicineDao,
                     approvedLeafletDao = FakeApprovedLeafletDao(),
                     submittedLeafletDao = NoOpSubmittedLeafletDao(),
+                    approvalHistoryDao = NoOpApprovalHistoryDao(),
                     userDao = NoOpUserDao(),
                     passwordHasher = passwordHasher,
                     catalogApiService = apiService,
@@ -152,9 +159,11 @@ class RoomCatalogRepositoryNetworkTest {
             val approvedLeafletDao = FakeApprovedLeafletDao()
             val repository =
                 RoomCatalogRepository(
+                    database = NoOpRxCatalogDatabase(),
                     medicineDao = medicineDao,
                     approvedLeafletDao = approvedLeafletDao,
                     submittedLeafletDao = NoOpSubmittedLeafletDao(),
+                    approvalHistoryDao = NoOpApprovalHistoryDao(),
                     userDao = NoOpUserDao(),
                     passwordHasher = passwordHasher,
                     catalogApiService = apiService,
@@ -234,9 +243,11 @@ class RoomCatalogRepositoryNetworkTest {
             )
             val repository =
                 RoomCatalogRepository(
+                    database = NoOpRxCatalogDatabase(),
                     medicineDao = medicineDao,
                     approvedLeafletDao = approvedLeafletDao,
                     submittedLeafletDao = NoOpSubmittedLeafletDao(),
+                    approvalHistoryDao = NoOpApprovalHistoryDao(),
                     userDao = NoOpUserDao(),
                     passwordHasher = passwordHasher,
                     catalogApiService = apiService,
@@ -285,9 +296,11 @@ class RoomCatalogRepositoryNetworkTest {
 
             val repository =
                 RoomCatalogRepository(
+                    database = NoOpRxCatalogDatabase(),
                     medicineDao = FakeMedicineDao(),
                     approvedLeafletDao = FakeApprovedLeafletDao(),
                     submittedLeafletDao = NoOpSubmittedLeafletDao(),
+                    approvalHistoryDao = NoOpApprovalHistoryDao(),
                     userDao = NoOpUserDao(),
                     passwordHasher = passwordHasher,
                     catalogApiService = apiService,
@@ -474,6 +487,32 @@ private class NoOpUserDao : UserDao {
     ) = error("Not used")
 
     override suspend fun delete(user: UserEntity) = error("Not used")
+}
+
+private class NoOpApprovalHistoryDao : ApprovalHistoryDao {
+    override suspend fun insert(entry: ApprovalHistoryEntity) = error("Not used")
+    override suspend fun upsert(entry: ApprovalHistoryEntity) = error("Not used")
+    override suspend fun upsertAll(entries: List<ApprovalHistoryEntity>) = error("Not used")
+    override suspend fun getById(approvalHistoryId: Uuid): ApprovalHistoryEntity? = error("Not used")
+    override fun observeById(approvalHistoryId: Uuid): Flow<ApprovalHistoryEntity?> = error("Not used")
+    override fun observeBySubmissionId(submissionId: Uuid): Flow<List<ApprovalHistoryEntity>> = error("Not used")
+    override fun observeByReviewerUserId(reviewerUserId: Uuid): Flow<List<ApprovalHistoryEntity>> = error("Not used")
+    override fun observeByAction(action: ApprovalAction): Flow<List<ApprovalHistoryEntity>> = error("Not used")
+
+    override fun observeBySyncStatus(syncStatus: SyncStatus): Flow<List<ApprovalHistoryEntity>> = error("Not used")
+    override suspend fun getLatestForSubmission(submissionId: Uuid): ApprovalHistoryEntity? = error("Not used")
+    override suspend fun delete(entry: ApprovalHistoryEntity) = error("Not used")
+}
+
+private class NoOpRxCatalogDatabase : RxCatalogDatabase() {
+    override fun userDao(): UserDao = error("Not used")
+    override fun medicineDao(): MedicineDao = error("Not used")
+    override fun submittedLeafletDao(): SubmittedLeafletDao = error("Not used")
+    override fun approvedLeafletDao(): ApprovedLeafletDao = error("Not used")
+    override fun approvalHistoryDao(): ApprovalHistoryDao = error("Not used")
+    override fun favoriteDao(): FavoriteDao = error("Not used")
+    override fun createInvalidationTracker() = androidx.room.InvalidationTracker(this)
+    override fun clearAllTables() = Unit
 }
 
 private class NoOpSubmittedLeafletDao : SubmittedLeafletDao {

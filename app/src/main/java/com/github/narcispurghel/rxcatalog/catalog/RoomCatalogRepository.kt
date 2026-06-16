@@ -2,6 +2,7 @@
 
 package com.github.narcispurghel.rxcatalog.catalog
 
+import androidx.room.withTransaction
 import com.github.narcispurghel.rxcatalog.auth.PasswordHasher
 import com.github.narcispurghel.rxcatalog.network.CatalogApiService
 import com.github.narcispurghel.rxcatalog.network.dto.ApprovedLeafletDto
@@ -10,6 +11,10 @@ import com.github.narcispurghel.rxcatalog.persistence.MedicineDao
 import com.github.narcispurghel.rxcatalog.persistence.MedicineEntity
 import com.github.narcispurghel.rxcatalog.persistence.ApprovedLeafletDao
 import com.github.narcispurghel.rxcatalog.persistence.ApprovedLeafletEntity
+import com.github.narcispurghel.rxcatalog.persistence.ApprovalAction
+import com.github.narcispurghel.rxcatalog.persistence.ApprovalHistoryDao
+import com.github.narcispurghel.rxcatalog.persistence.ApprovalHistoryEntity
+import com.github.narcispurghel.rxcatalog.persistence.RxCatalogDatabase
 import com.github.narcispurghel.rxcatalog.persistence.SubmissionStatus
 import com.github.narcispurghel.rxcatalog.persistence.SubmittedLeafletDao
 import com.github.narcispurghel.rxcatalog.persistence.SubmittedLeafletEntity
@@ -29,9 +34,11 @@ import kotlin.uuid.Uuid
 
 @Singleton
 class RoomCatalogRepository @Inject constructor(
+    private val database: RxCatalogDatabase,
     private val medicineDao: MedicineDao,
     private val approvedLeafletDao: ApprovedLeafletDao,
     private val submittedLeafletDao: SubmittedLeafletDao,
+    private val approvalHistoryDao: ApprovalHistoryDao,
     private val userDao: UserDao,
     private val passwordHasher: PasswordHasher,
     private val catalogApiService: CatalogApiService,
@@ -65,6 +72,29 @@ class RoomCatalogRepository @Inject constructor(
             .combine(medicineDao.observeAll()) { leaflet, medicines ->
                 leaflet?.toLeafletDetailsItem(medicines)
             }
+
+    override fun observeSubmissionDetails(submissionId: Uuid): Flow<SubmissionDetailsItem?> =
+        flow {
+            ensureSeedData()
+            emitAll(
+                combine(
+                    submittedLeafletDao.observeById(submissionId),
+                    medicineDao.observeAll(),
+                    userDao.observeAll(),
+                    approvalHistoryDao.observeBySubmissionId(submissionId),
+                ) { submission, medicines, users, history ->
+                    val currentSubmission = submission ?: return@combine null
+                    val medicine =
+                        medicines.firstOrNull { it.medicineId == currentSubmission.medicineId }
+                            ?: return@combine null
+                    currentSubmission.toSubmissionDetailsItem(
+                        medicine = medicine,
+                        usersById = users.associateBy { it.userId },
+                        latestHistory = history.lastOrNull(),
+                    )
+                },
+            )
+        }
 
     override fun observeSubmissionsForUser(userId: Uuid): Flow<List<SubmissionListItem>> =
         flow {
@@ -180,6 +210,90 @@ class RoomCatalogRepository @Inject constructor(
         }
     }
 
+    override suspend fun saveSubmissionDraft(
+        submissionId: Uuid?,
+        medicineId: Uuid,
+        submittedByUserId: Uuid,
+        title: String,
+        content: String,
+    ): Uuid {
+        ensureSeedData()
+        val now = System.currentTimeMillis()
+        val resolvedSubmissionId = submissionId ?: Uuid.random()
+        val currentSubmission = submittedLeafletDao.getById(resolvedSubmissionId)
+        if (currentSubmission?.status == SubmissionStatus.APPROVED) {
+            return resolvedSubmissionId
+        }
+        val submission =
+            SubmittedLeafletEntity(
+                submissionId = resolvedSubmissionId,
+                medicineId = currentSubmission?.medicineId ?: medicineId,
+                submittedByUserId = currentSubmission?.submittedByUserId ?: submittedByUserId,
+                reviewedByUserId = null,
+                title = title,
+                content = content,
+                status = SubmissionStatus.DRAFT,
+                rejectionReason = null,
+                createdAt = currentSubmission?.createdAt ?: now,
+                updatedAt = now,
+                reviewedAt = null,
+                syncStatus =
+                    if (currentSubmission == null) {
+                        com.github.narcispurghel.rxcatalog.persistence.SyncStatus.PENDING_CREATE
+                    } else {
+                        com.github.narcispurghel.rxcatalog.persistence.SyncStatus.PENDING_UPDATE
+                    },
+            )
+        submittedLeafletDao.upsert(submission)
+        return resolvedSubmissionId
+    }
+
+    override suspend fun submitForReview(submissionId: Uuid, reviewedAt: Long) {
+        ensureSeedData()
+        submittedLeafletDao.updateStatus(
+            submissionId = submissionId,
+            status = SubmissionStatus.PENDING_REVIEW,
+            updatedAt = reviewedAt,
+            syncStatus = com.github.narcispurghel.rxcatalog.persistence.SyncStatus.PENDING_UPDATE,
+        )
+    }
+
+    override suspend fun reviewSubmission(
+        submissionId: Uuid,
+        reviewerUserId: Uuid,
+        approve: Boolean,
+        notes: String?,
+        reviewedAt: Long,
+    ) {
+        ensureSeedData()
+        database.withTransaction {
+            val current = submittedLeafletDao.getById(submissionId) ?: return@withTransaction
+            val status = if (approve) SubmissionStatus.APPROVED else SubmissionStatus.REJECTED
+            submittedLeafletDao.updateReviewState(
+                submissionId = submissionId,
+                reviewedByUserId = reviewerUserId,
+                status = status,
+                rejectionReason = if (approve) null else notes?.takeIf { it.isNotBlank() },
+                reviewedAt = reviewedAt,
+                updatedAt = reviewedAt,
+                syncStatus = com.github.narcispurghel.rxcatalog.persistence.SyncStatus.PENDING_UPDATE,
+            )
+
+            approvalHistoryDao.insert(
+                ApprovalHistoryEntity(
+                    approvalHistoryId = Uuid.random(),
+                    submissionId = current.submissionId,
+                    reviewerUserId = reviewerUserId,
+                    action = if (approve) ApprovalAction.APPROVE else ApprovalAction.REJECT,
+                    notes = notes?.takeIf { it.isNotBlank() },
+                    actedAt = reviewedAt,
+                    createdAt = reviewedAt,
+                    syncStatus = com.github.narcispurghel.rxcatalog.persistence.SyncStatus.PENDING_UPDATE,
+                ),
+            )
+        }
+    }
+
     private fun MedicineEntity.toMedicineListItem(): MedicineListItem =
         MedicineListItem(
             medicineId = medicineId.toString(),
@@ -253,6 +367,33 @@ class RoomCatalogRepository @Inject constructor(
             submittedBy = submitter.displayName,
             createdAtLabel = createdAt.toRelativeLabel(),
             isUrgent = isUrgent(),
+        )
+
+    private fun SubmittedLeafletEntity.toSubmissionDetailsItem(
+        medicine: MedicineEntity,
+        usersById: Map<Uuid, UserEntity>,
+        latestHistory: ApprovalHistoryEntity?,
+    ): SubmissionDetailsItem =
+        SubmissionDetailsItem(
+            submissionId = submissionId.toString(),
+            medicineId = medicine.medicineId.toString(),
+            medicineName = medicine.canonicalName,
+            submittedBy = usersById[submittedByUserId]?.displayName ?: "Unknown submitter",
+            title = title,
+            content = content,
+            statusLabel = status.toLabel(),
+            createdAtLabel = "Submitted ${createdAt.toRelativeLabel()}",
+            updatedAtLabel = "Updated ${updatedAt.toRelativeLabel()}",
+            reviewedAtLabel = reviewedAt?.let { "Reviewed ${it.toRelativeLabel()}" },
+            reviewedBy =
+                listOfNotNull(
+                    reviewedByUserId,
+                    latestHistory?.reviewerUserId,
+                ).firstOrNull()?.let { reviewerId ->
+                    usersById[reviewerId]?.displayName
+                },
+            rejectionReason = rejectionReason,
+            latestReviewNote = latestHistory?.notes,
         )
 
     private fun SubmissionStatus.toLabel(): String =
