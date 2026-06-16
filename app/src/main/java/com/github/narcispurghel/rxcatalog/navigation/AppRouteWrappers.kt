@@ -40,10 +40,13 @@ import com.github.narcispurghel.rxcatalog.ui.viewmodels.MedicineDetailsViewModel
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.MySubmissionsViewModel
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.PendingApprovalsViewModel
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchViewModel
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.ReviewSubmissionViewModel
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.SubmitLeafletViewModel
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Modifier
+import kotlin.uuid.Uuid
 
 @Composable
 fun AppNavHost(
@@ -290,10 +293,38 @@ private fun SubmitLeafletRoute(
     entry: NavBackStackEntry,
 ) {
     EnsureAuthenticated(navController, snackbarHostState, sessionState) {
-        SubmitLeafletScreen(
-            submissionId = entry.stringArgument("submissionId"),
-            medicineId = entry.stringArgument("medicineId"),
-        )
+        val submissionIdArg = entry.stringArgument("submissionId")
+        val medicineIdArg = entry.stringArgument("medicineId")
+        when {
+            submissionIdArg != null && submissionIdArg.toUuidOrNull() == null -> {
+                InvalidRouteRedirect(
+                    navController = navController,
+                    snackbarHostState = snackbarHostState,
+                    message = "Unable to open that submission.",
+                    fallbackRoute = AppRoutes.MY_SUBMISSIONS,
+                )
+            }
+            medicineIdArg != null && medicineIdArg.toUuidOrNull() == null -> {
+                InvalidRouteRedirect(
+                    navController = navController,
+                    snackbarHostState = snackbarHostState,
+                    message = "Unable to open that medicine.",
+                    fallbackRoute = AppRoutes.searchRoute(),
+                )
+            }
+            else -> {
+                val viewModel: SubmitLeafletViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                SubmitLeafletScreen(
+                    state = uiState,
+                    onMedicineIdChanged = viewModel::onMedicineIdChanged,
+                    onTitleChanged = viewModel::onTitleChanged,
+                    onContentChanged = viewModel::onContentChanged,
+                    onSaveDraft = viewModel::saveDraft,
+                    onSubmitForReview = viewModel::submitForReview,
+                )
+            }
+        }
     }
 }
 
@@ -338,15 +369,33 @@ private fun ReviewSubmissionRoute(
 ) {
     EnsureReviewerAccess(navController, snackbarHostState, sessionState) {
         val submissionId = entry.stringArgument("submissionId")
-        if (submissionId == null) {
-            InvalidRouteRedirect(
-                navController = navController,
-                snackbarHostState = snackbarHostState,
-                message = "Unable to open that review.",
-                fallbackRoute = AppRoutes.PENDING_APPROVALS,
-            )
-        } else {
-            ReviewSubmissionScreen(submissionId = submissionId)
+        when {
+            submissionId == null -> {
+                InvalidRouteRedirect(
+                    navController = navController,
+                    snackbarHostState = snackbarHostState,
+                    message = "Unable to open that review.",
+                    fallbackRoute = AppRoutes.PENDING_APPROVALS,
+                )
+            }
+            submissionId.toUuidOrNull() == null -> {
+                InvalidRouteRedirect(
+                    navController = navController,
+                    snackbarHostState = snackbarHostState,
+                    message = "Unable to open that review.",
+                    fallbackRoute = AppRoutes.PENDING_APPROVALS,
+                )
+            }
+            else -> {
+                val viewModel: ReviewSubmissionViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                ReviewSubmissionScreen(
+                    state = uiState,
+                    onReviewerNoteChanged = viewModel::onReviewerNoteChanged,
+                    onApprove = viewModel::approve,
+                    onReject = viewModel::reject,
+                )
+            }
         }
     }
 }
@@ -512,3 +561,6 @@ fun String?.isTopLevelRouteSelected(destinationRoute: String): Boolean {
 
 private fun NavBackStackEntry.stringArgument(name: String): String? =
     arguments?.getString(name)?.takeIf { it.isNotBlank() }
+
+private fun String.toUuidOrNull(): Uuid? =
+    runCatching { Uuid.parse(this) }.getOrNull()
