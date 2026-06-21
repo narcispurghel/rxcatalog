@@ -4,31 +4,27 @@ import com.github.narcispurghel.rxcatalog.network.dto.CreateLeafletSubmissionReq
 import com.github.narcispurghel.rxcatalog.network.dto.CreateLeafletSubmissionResponseDto
 import com.github.narcispurghel.rxcatalog.network.dto.MedicineDetailsResponseDto
 import com.github.narcispurghel.rxcatalog.network.dto.MedicineSearchResponseDto
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
-import retrofit2.http.Query
+import retrofit2.http.*
 
 interface CatalogApiService {
-    @GET("v1/medicines")
-    suspend fun searchMedicines(
-        @Query("query") query: String? = null,
-    ): MedicineSearchResponseDto
+	@GET("v1/medicines")
+	suspend fun searchMedicines(
+		@Query("query") query: String? = null,
+	): MedicineSearchResponseDto
 
-    @GET("v1/medicines/{medicineId}")
-    suspend fun getMedicineDetails(
-        @Path("medicineId") medicineId: String,
-    ): MedicineDetailsResponseDto
+	@GET("v1/medicines/{medicineId}")
+	suspend fun getMedicineDetails(
+		@Path("medicineId") medicineId: String,
+	): MedicineDetailsResponseDto
 
-    @GET("v1/leaflets/{leafletId}")
-    suspend fun getLeafletDetails(
-        @Path("leafletId") leafletId: String,
-    ): MedicineDetailsResponseDto
+	@GET("v1/leaflets/{leafletId}")
+	suspend fun getLeafletDetails(
+		@Path("leafletId") leafletId: String,
+	): MedicineDetailsResponseDto
 
-    @POST("v1/medicines/{medicineId}/submissions")
-    suspend fun submitLeaflet(
-        @Path("medicineId") medicineId: String,
-        @Body body: CreateLeafletSubmissionRequestDto,
-    ): CreateLeafletSubmissionResponseDto
+	@POST("v1/medicines/{medicineId}/submissions")
+	suspend fun submitLeaflet(
+		@Path("medicineId") medicineId: String,
+		@Body body: CreateLeafletSubmissionRequestDto,
+	): CreateLeafletSubmissionResponseDto
 }

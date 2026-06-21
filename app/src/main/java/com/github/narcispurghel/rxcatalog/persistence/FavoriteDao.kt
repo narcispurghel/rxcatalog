@@ -2,114 +2,118 @@
 
 package com.github.narcispurghel.rxcatalog.persistence
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Upsert
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import kotlin.uuid.Uuid
 
 @Dao
 interface FavoriteDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(favorite: FavoriteEntity)
+	@Insert(onConflict = OnConflictStrategy.REPLACE)
+	suspend fun insert(favorite: FavoriteEntity)
 
-    @Upsert
-    suspend fun upsert(favorite: FavoriteEntity)
+	@Upsert
+	suspend fun upsert(favorite: FavoriteEntity)
 
-    @Upsert
-    suspend fun upsertAll(favorites: List<FavoriteEntity>)
+	@Upsert
+	suspend fun upsertAll(favorites: List<FavoriteEntity>)
 
-    @Query(
-        """
+	@Query(
+		"""
         select * from favorites
         where userId = :userId and medicineId = :medicineId
         limit 1
-        """
-    )
-    suspend fun getByUserAndMedicine(userId: Uuid, medicineId: Uuid): FavoriteEntity?
+        """,
+	)
+	suspend fun getByUserAndMedicine(
+		userId: Uuid,
+		medicineId: Uuid,
+	): FavoriteEntity?
 
-    @Query(
-        """
+	@Query(
+		"""
         select * from favorites
         where userId = :userId and medicineId = :medicineId
         limit 1
-        """
-    )
-    fun observeByUserAndMedicine(userId: Uuid, medicineId: Uuid): Flow<FavoriteEntity?>
+        """,
+	)
+	fun observeByUserAndMedicine(
+		userId: Uuid,
+		medicineId: Uuid,
+	): Flow<FavoriteEntity?>
 
-    @Query(
-        """
+	@Query(
+		"""
         select * from favorites
         where userId = :userId
         order by createdAt desc
-        """
-    )
-    fun observeByUserId(userId: Uuid): Flow<List<FavoriteEntity>>
+        """,
+	)
+	fun observeByUserId(userId: Uuid): Flow<List<FavoriteEntity>>
 
-    @Query(
-        """
+	@Query(
+		"""
         select medicines.* from medicines
         inner join favorites on favorites.medicineId = medicines.medicineId
         where favorites.userId = :userId
         order by favorites.createdAt desc, medicines.canonicalName collate nocase asc
-        """
-    )
-    fun observeFavoriteMedicinesByUserId(userId: Uuid): Flow<List<MedicineEntity>>
+        """,
+	)
+	fun observeFavoriteMedicinesByUserId(userId: Uuid): Flow<List<MedicineEntity>>
 
-    @Query(
-        """
+	@Query(
+		"""
         select * from favorites
         where medicineId = :medicineId
         order by createdAt desc
-        """
-    )
-    fun observeByMedicineId(medicineId: Uuid): Flow<List<FavoriteEntity>>
+        """,
+	)
+	fun observeByMedicineId(medicineId: Uuid): Flow<List<FavoriteEntity>>
 
-    @Query(
-        """
+	@Query(
+		"""
         select count(*) from favorites
         where userId = :userId
-        """
-    )
-    fun observeCountForUser(userId: Uuid): Flow<Int>
+        """,
+	)
+	fun observeCountForUser(userId: Uuid): Flow<Int>
 
-    @Query(
-        """
+	@Query(
+		"""
         select exists(
             select 1 from favorites
             where userId = :userId and medicineId = :medicineId
         )
-        """
-    )
-    fun observeIsFavorite(userId: Uuid, medicineId: Uuid): Flow<Boolean>
+        """,
+	)
+	fun observeIsFavorite(
+		userId: Uuid,
+		medicineId: Uuid,
+	): Flow<Boolean>
 
-    @Query(
-        """
+	@Query(
+		"""
         select * from favorites
         where syncStatus = :syncStatus
         order by createdAt desc
-        """
-    )
-    fun observeBySyncStatus(syncStatus: SyncStatus): Flow<List<FavoriteEntity>>
+        """,
+	)
+	fun observeBySyncStatus(syncStatus: SyncStatus): Flow<List<FavoriteEntity>>
 
-    @Query(
-        """
+	@Query(
+		"""
         update favorites
         set createdAt = :createdAt,
             syncStatus = :syncStatus
         where userId = :userId and medicineId = :medicineId
-        """
-    )
-    suspend fun update(
-        userId: Uuid,
-        medicineId: Uuid,
-        createdAt: Long,
-        syncStatus: SyncStatus,
-    )
+        """,
+	)
+	suspend fun update(
+		userId: Uuid,
+		medicineId: Uuid,
+		createdAt: Long,
+		syncStatus: SyncStatus,
+	)
 
-    @Delete
-    suspend fun delete(favorite: FavoriteEntity)
+	@Delete
+	suspend fun delete(favorite: FavoriteEntity)
 }

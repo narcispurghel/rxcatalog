@@ -16,21 +16,9 @@ import com.github.narcispurghel.rxcatalog.catalog.LeafletDetailsItem
 import com.github.narcispurghel.rxcatalog.catalog.MedicineDetailsItem
 import com.github.narcispurghel.rxcatalog.common.UserRole
 import com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals.sampleApprovalQueue
-import com.github.narcispurghel.rxcatalog.ui.screens.AuthScreen
-import com.github.narcispurghel.rxcatalog.ui.screens.HomeScreen
-import com.github.narcispurghel.rxcatalog.ui.screens.LeafletDetailsScreen
-import com.github.narcispurghel.rxcatalog.ui.screens.MedicineDetailsScreen
-import com.github.narcispurghel.rxcatalog.ui.screens.MySubmissionsScreen
-import com.github.narcispurghel.rxcatalog.ui.screens.PendingApprovalsScreen
-import com.github.narcispurghel.rxcatalog.ui.screens.SearchScreen
+import com.github.narcispurghel.rxcatalog.ui.screens.*
 import com.github.narcispurghel.rxcatalog.ui.theme.RxCatalogTheme
-import com.github.narcispurghel.rxcatalog.ui.viewmodels.LeafletDetailsUiState
-import com.github.narcispurghel.rxcatalog.ui.viewmodels.MedicineDetailsUiState
-import com.github.narcispurghel.rxcatalog.ui.viewmodels.MySubmissionItem
-import com.github.narcispurghel.rxcatalog.ui.viewmodels.MySubmissionsUiState
-import com.github.narcispurghel.rxcatalog.ui.viewmodels.PendingApprovalsUiState
-import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchResultItem
-import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchUiState
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.*
 import kotlin.uuid.Uuid
 
 private const val PreviewWidthDp = 411
@@ -42,6 +30,34 @@ private val previewUser =
 		email = "doctor.popescu@rxcatalog.test",
 		displayName = "Dr. Andrei Popescu",
 		role = UserRole.DOCTOR,
+	)
+
+private val previewHomeState =
+	HomeUiState(
+		isLoading = false,
+		medicineCount = 4,
+		pendingApprovalsCount = 2,
+		featuredMedicines =
+			listOf(
+				HomeFeaturedMedicineItem(
+					medicineId = CatalogSeedIds.ASPIRIN_MEDICINE_ID,
+					name = "Aspirin",
+					detail = "Acetylsalicylic acid",
+					hasPendingReview = true,
+				),
+				HomeFeaturedMedicineItem(
+					medicineId = CatalogSeedIds.PARACETAMOL_MEDICINE_ID,
+					name = "Paracetamol",
+					detail = "Paracetamol",
+					hasPendingReview = true,
+				),
+				HomeFeaturedMedicineItem(
+					medicineId = CatalogSeedIds.IBUPROFEN_MEDICINE_ID,
+					name = "Ibuprofen",
+					detail = "Ibuprofen",
+					hasPendingReview = false,
+				),
+			),
 	)
 
 private val previewApprovedLeaflet =
@@ -310,6 +326,7 @@ fun HomeScreenLightPreview() {
 		HomeScreen(
 			sessionState = SessionState.Authenticated(previewUser),
 			currentUser = previewUser,
+			homeState = previewHomeState,
 			onSearch = {},
 			onSubmit = {},
 			onApprovals = {},
@@ -333,6 +350,7 @@ fun HomeScreenDarkPreview() {
 		HomeScreen(
 			sessionState = SessionState.Authenticated(previewUser),
 			currentUser = previewUser,
+			homeState = previewHomeState,
 			onSearch = {},
 			onSubmit = {},
 			onApprovals = {},
