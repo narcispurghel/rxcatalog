@@ -4,9 +4,11 @@ package com.github.narcispurghel.rxcatalog.catalog
 
 import com.github.narcispurghel.rxcatalog.auth.PasswordHasher
 import com.github.narcispurghel.rxcatalog.network.CatalogApiService
+import com.github.narcispurghel.rxcatalog.network.OpenFdaApiService
 import com.github.narcispurghel.rxcatalog.persistence.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -33,6 +35,7 @@ class RoomCatalogRepositoryNetworkTest {
 
 	private lateinit var server: MockWebServer
 	private lateinit var apiService: CatalogApiService
+	private lateinit var openFdaApiService: OpenFdaApiService
 
 	@Before
 	fun setUp() {
@@ -45,6 +48,13 @@ class RoomCatalogRepositoryNetworkTest {
 				.addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
 				.build()
 				.create(CatalogApiService::class.java)
+		openFdaApiService =
+			Retrofit
+				.Builder()
+				.baseUrl(server.url("/"))
+				.addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+				.build()
+				.create(OpenFdaApiService::class.java)
 	}
 
 	@After
@@ -55,85 +65,28 @@ class RoomCatalogRepositoryNetworkTest {
 	@Test
 	fun `refreshMedicines parses remote medicines and stores them in the local catalogue`() =
 		runTest {
-			val medicineId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 			server.enqueue(
 				MockResponse()
 					.setResponseCode(200)
 					.setBody(
 						"""
 						{
-						  "items": [
+						  "results": [
 						    {
-						      "id": "$medicineId",
-						      "canonical_name": "Aspirin 100 mg",
-						      "brand_name": "Aspirin Protect",
-						      "active_ingredient": "Acetylsalicylic acid",
-						      "atc_code": "B01AC06",
-						      "description": "Antiplatelet medicine",
-						      "last_updated_at": 1700000000000
+						      "set_id": "openfda-set-aspirin",
+						      "effective_time": "20240115",
+						      "purpose": ["Pain reliever"],
+						      "warnings": ["Reye's syndrome warning applies."],
+						      "openfda": {
+						        "brand_name": ["Aspirin Protect"],
+						        "generic_name": ["Aspirin 100 mg"],
+						        "substance_name": ["Acetylsalicylic acid"],
+						        "product_type": ["HUMAN OTC DRUG"],
+						        "rxcui": ["1191"],
+						        "product_ndc": ["0000-0001"]
+						      }
 						    }
 						  ]
-						}
-						""".trimIndent(),
-					),
-			)
-
-			val medicineDao = FakeMedicineDao()
-			val repository =
-				RoomCatalogRepository(
-					database = NoOpRxCatalogDatabase(),
-					medicineDao = medicineDao,
-					approvedLeafletDao = FakeApprovedLeafletDao(),
-					submittedLeafletDao = NoOpSubmittedLeafletDao(),
-					approvalHistoryDao = NoOpApprovalHistoryDao(),
-					userDao = NoOpUserDao(),
-					passwordHasher = passwordHasher,
-					catalogApiService = apiService,
-				)
-
-			repository.refreshMedicines("aspirin")
-
-			val request = server.takeRequest()
-			assertEquals("/v1/medicines?query=aspirin", request.path)
-			val stored = medicineDao.getById(Uuid.parse(medicineId))
-			assertNotNull(stored)
-			assertEquals("Aspirin 100 mg", stored?.canonicalName)
-			assertEquals("Aspirin Protect", stored?.brandName)
-			assertEquals("Acetylsalicylic acid", stored?.activeIngredient)
-			assertEquals("B01AC06", stored?.atcCode)
-			assertEquals("Antiplatelet medicine", stored?.description)
-			assertEquals(SyncStatus.SYNCED, stored?.syncStatus)
-		}
-
-	@Test
-	fun `refreshMedicineDetails parses remote details and stores approved leaflets`() =
-		runTest {
-			val medicineId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
-			val leafletId = "dddddddd-dddd-dddd-dddd-dddddddddddd"
-			server.enqueue(
-				MockResponse()
-					.setResponseCode(200)
-					.setBody(
-						"""
-						{
-						  "medicine": {
-						    "id": "$medicineId",
-						    "canonical_name": "Ibuprofen 200 mg",
-						    "brand_name": "Nurofen",
-						    "active_ingredient": "Ibuprofen",
-						    "atc_code": "M01AE01",
-						    "description": "Pain relief medicine",
-						    "last_updated_at": 1700000100000
-						  },
-						  "approved_leaflet": {
-						    "id": "$leafletId",
-						    "medicine_id": "$medicineId",
-						    "title": "Ibuprofen leaflet",
-						    "content": "Approved leaflet content",
-						    "version": 2,
-						    "published_at": 1700000200000
-						  },
-						  "recent_submissions": []
 						}
 						""".trimIndent(),
 					),
@@ -151,27 +104,119 @@ class RoomCatalogRepositoryNetworkTest {
 					userDao = NoOpUserDao(),
 					passwordHasher = passwordHasher,
 					catalogApiService = apiService,
+					openFdaApiService = openFdaApiService,
 				)
 
-			repository.refreshMedicineDetails(Uuid.parse(medicineId))
+			repository.refreshMedicines("aspirin")
 
 			val request = server.takeRequest()
-			assertEquals("/v1/medicines/$medicineId", request.path)
-			val storedMedicine = medicineDao.getById(Uuid.parse(medicineId))
-			assertNotNull(storedMedicine)
-			assertEquals("Ibuprofen 200 mg", storedMedicine?.canonicalName)
-			assertEquals("Nurofen", storedMedicine?.brandName)
-			assertEquals("Pain relief medicine", storedMedicine?.description)
-			val storedLeaflet = approvedLeafletDao.getById(Uuid.parse(leafletId))
+			assertEquals("/drug/label.json", request.requestUrl?.encodedPath)
+			assertEquals(25.toString(), request.requestUrl?.queryParameter("limit"))
+			assertEquals(
+				"openfda.brand_name:\"aspirin\" OR " +
+					"openfda.generic_name:\"aspirin\" OR " +
+					"openfda.substance_name:\"aspirin\"",
+				request.requestUrl?.queryParameter("search"),
+			)
+			val stored = medicineDao.observeAll().first().single()
+			assertNotNull(stored)
+			assertEquals("Aspirin Protect", stored?.canonicalName)
+			assertEquals(null, stored?.brandName)
+			assertEquals("Acetylsalicylic acid", stored?.activeIngredient)
+			assertEquals(null, stored?.atcCode)
+			assertEquals(null, stored?.description)
+			assertEquals(SyncStatus.SYNCED, stored?.syncStatus)
+			val storedLeaflet = approvedLeafletDao.getByMedicineId(stored!!.medicineId)
 			assertNotNull(storedLeaflet)
-			assertEquals("Ibuprofen leaflet", storedLeaflet?.title)
-			assertEquals("Approved leaflet content", storedLeaflet?.content)
-			assertEquals(2, storedLeaflet?.version)
-			assertEquals(Uuid.parse(medicineId), storedLeaflet?.medicineId)
+			assertEquals("Aspirin Protect OpenFDA label", storedLeaflet?.title)
 		}
 
 	@Test
-	fun `refreshMedicineDetails deletes stale approved leaflets when backend omits them`() =
+	fun `refreshMedicineDetails uses OpenFDA details and stores approved leaflets`() =
+		runTest {
+			val medicineId = Uuid.parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+			server.enqueue(
+				MockResponse()
+					.setResponseCode(200)
+					.setBody(
+						"""
+						{
+						  "results": [
+						    {
+						      "set_id": "openfda-set-ibuprofen",
+						      "effective_time": "20240115",
+						      "purpose": ["Pain reliever/fever reducer"],
+						      "indications_and_usage": ["Temporarily relieves minor aches and pains."],
+						      "dosage_and_administration": ["Use as directed on the package."],
+						      "warnings": ["Stomach bleeding warning applies."],
+						      "openfda": {
+						        "brand_name": ["Nurofen"],
+						        "generic_name": ["Ibuprofen 200 mg"],
+						        "substance_name": ["Ibuprofen"],
+						        "product_type": ["HUMAN OTC DRUG"],
+						        "rxcui": ["5640"]
+						      }
+						    }
+						  ]
+						}
+						""".trimIndent(),
+					),
+			)
+
+			val medicineDao = FakeMedicineDao()
+			medicineDao.upsert(
+				MedicineEntity(
+					medicineId = medicineId,
+					canonicalName = "Ibuprofen 200 mg",
+					brandName = "Nurofen",
+					activeIngredient = "Ibuprofen",
+					atcCode = "M01AE01",
+					description = null,
+					createdAt = 1700000000000,
+					updatedAt = 1700000000000,
+					syncStatus = SyncStatus.SYNCED,
+				),
+			)
+			val approvedLeafletDao = FakeApprovedLeafletDao()
+			val repository =
+				RoomCatalogRepository(
+					database = NoOpRxCatalogDatabase(),
+					medicineDao = medicineDao,
+					approvedLeafletDao = approvedLeafletDao,
+					submittedLeafletDao = NoOpSubmittedLeafletDao(),
+					approvalHistoryDao = NoOpApprovalHistoryDao(),
+					userDao = NoOpUserDao(),
+					passwordHasher = passwordHasher,
+					catalogApiService = apiService,
+					openFdaApiService = openFdaApiService,
+				)
+
+			repository.refreshMedicineDetails(medicineId)
+
+			val request = server.takeRequest()
+			assertEquals("/drug/label.json", request.requestUrl?.encodedPath)
+			assertEquals("1", request.requestUrl?.queryParameter("limit"))
+			assertEquals(
+				"openfda.brand_name:\"Nurofen\" OR " +
+					"openfda.generic_name:\"Ibuprofen 200 mg\" OR " +
+					"openfda.substance_name:\"Ibuprofen\"",
+				request.requestUrl?.queryParameter("search"),
+			)
+			val storedMedicine = medicineDao.getById(medicineId)
+			assertNotNull(storedMedicine)
+			assertEquals("Nurofen", storedMedicine?.canonicalName)
+			assertEquals("Nurofen", storedMedicine?.brandName)
+			assertEquals("Pain reliever/fever reducer", storedMedicine?.description)
+			val storedLeaflet = approvedLeafletDao.getByMedicineId(medicineId)
+			assertNotNull(storedLeaflet)
+			assertEquals("Nurofen OpenFDA label", storedLeaflet?.title)
+			assertEquals(true, storedLeaflet?.content?.contains("Warnings") == true)
+			assertEquals(1, storedLeaflet?.version)
+			assertEquals(medicineId, storedLeaflet?.medicineId)
+		}
+
+	@Test
+	fun `refreshMedicineDetails keeps cached leaflet when OpenFDA has no matching result`() =
 		runTest {
 			val medicineId = Uuid.parse("cccccccc-cccc-cccc-cccc-cccccccccccc")
 			val leafletId = Uuid.parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
@@ -181,17 +226,7 @@ class RoomCatalogRepositoryNetworkTest {
 					.setBody(
 						"""
 						{
-						  "medicine": {
-						    "id": "$medicineId",
-						    "canonical_name": "Ibuprofen 200 mg",
-						    "brand_name": "Nurofen",
-						    "active_ingredient": "Ibuprofen",
-						    "atc_code": "M01AE01",
-						    "description": "Pain relief medicine",
-						    "last_updated_at": 1700000300000
-						  },
-						  "approved_leaflet": null,
-						  "recent_submissions": []
+						  "results": []
 						}
 						""".trimIndent(),
 					),
@@ -235,13 +270,14 @@ class RoomCatalogRepositoryNetworkTest {
 					userDao = NoOpUserDao(),
 					passwordHasher = passwordHasher,
 					catalogApiService = apiService,
+					openFdaApiService = openFdaApiService,
 				)
 
 			repository.refreshMedicineDetails(medicineId)
 
 			val request = server.takeRequest()
-			assertEquals("/v1/medicines/$medicineId", request.path)
-			assertEquals(null, approvedLeafletDao.getByMedicineId(medicineId))
+			assertEquals("/drug/label.json", request.requestUrl?.encodedPath)
+			assertNotNull(approvedLeafletDao.getByMedicineId(medicineId))
 		}
 
 	@Test
@@ -288,6 +324,7 @@ class RoomCatalogRepositoryNetworkTest {
 					userDao = NoOpUserDao(),
 					passwordHasher = passwordHasher,
 					catalogApiService = apiService,
+					openFdaApiService = openFdaApiService,
 				)
 
 			repository.refreshLeafletDetails(Uuid.parse(leafletId))

@@ -2,6 +2,7 @@ package com.github.narcispurghel.rxcatalog.di
 
 import com.github.narcispurghel.rxcatalog.BuildConfig
 import com.github.narcispurghel.rxcatalog.network.CatalogApiService
+import com.github.narcispurghel.rxcatalog.network.OpenFdaApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -62,4 +63,18 @@ object NetworkModule {
 	@Singleton
 	fun provideCatalogApiService(retrofit: Retrofit): CatalogApiService =
 		retrofit.create(CatalogApiService::class.java)
+
+	@Provides
+	@Singleton
+	fun provideOpenFdaApiService(
+		json: Json,
+		okHttpClient: OkHttpClient,
+	): OpenFdaApiService =
+		Retrofit
+			.Builder()
+			.baseUrl("https://api.fda.gov/")
+			.client(okHttpClient)
+			.addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+			.build()
+			.create(OpenFdaApiService::class.java)
 }

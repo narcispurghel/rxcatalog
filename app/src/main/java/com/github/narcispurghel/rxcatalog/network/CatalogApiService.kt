@@ -4,6 +4,7 @@ import com.github.narcispurghel.rxcatalog.network.dto.CreateLeafletSubmissionReq
 import com.github.narcispurghel.rxcatalog.network.dto.CreateLeafletSubmissionResponseDto
 import com.github.narcispurghel.rxcatalog.network.dto.MedicineDetailsResponseDto
 import com.github.narcispurghel.rxcatalog.network.dto.MedicineSearchResponseDto
+import com.github.narcispurghel.rxcatalog.network.dto.OpenFdaDrugLabelSearchResponseDto
 import retrofit2.http.*
 
 interface CatalogApiService {
@@ -27,4 +28,12 @@ interface CatalogApiService {
 		@Path("medicineId") medicineId: String,
 		@Body body: CreateLeafletSubmissionRequestDto,
 	): CreateLeafletSubmissionResponseDto
+}
+
+interface OpenFdaApiService {
+	@GET("drug/label.json")
+	suspend fun searchDrugLabels(
+		@Query("search") search: String,
+		@Query("limit") limit: Int = 25,
+	): OpenFdaDrugLabelSearchResponseDto
 }

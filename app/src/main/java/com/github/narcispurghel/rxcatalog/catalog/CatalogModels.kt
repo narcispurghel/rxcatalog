@@ -7,6 +7,7 @@ data class MedicineListItem(
     val activeIngredient: String?,
     val atcCode: String?,
     val description: String?,
+    val hasApprovedLeaflet: Boolean = false,
 )
 
 data class SubmissionListItem(

@@ -91,12 +91,7 @@ fun MedicineSearchCard(
 				)
 				MetadataRow(
 					label = "Leaflet",
-					value =
-						if (medicine.description.isNullOrBlank()) {
-							"Not listed"
-						} else {
-							"Details available"
-						},
+					value = if (medicine.hasApprovedLeaflet) "Approved" else "Not approved",
 				)
 			}
 			Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -119,15 +114,15 @@ private fun DataPill(text: String) {
 }
 
 private fun SearchResultItem.leafletStatusLabel(): String =
-	if (description.isNullOrBlank()) {
-		"Leaflet unavailable"
+	if (hasApprovedLeaflet) {
+		"Approved leaflet"
 	} else {
-		"Leaflet listed"
+		"No approved leaflet"
 	}
 
 private fun SearchResultItem.leafletStatusTone(): StatusChipTone =
-	if (description.isNullOrBlank()) {
-		StatusChipTone.DRAFT
-	} else {
+	if (hasApprovedLeaflet) {
 		StatusChipTone.REVIEWER
+	} else {
+		StatusChipTone.DRAFT
 	}

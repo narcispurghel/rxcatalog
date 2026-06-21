@@ -92,3 +92,57 @@ data class CreateLeafletSubmissionResponseDto(
     @SerialName("submission")
     val submission: LeafletSubmissionDto,
 )
+
+@Serializable
+data class OpenFdaDrugLabelSearchResponseDto(
+    @SerialName("results")
+    val results: List<OpenFdaDrugLabelDto> = emptyList(),
+)
+
+@Serializable
+data class OpenFdaDrugLabelDto(
+    @SerialName("set_id")
+    val setId: String? = null,
+    @SerialName("effective_time")
+    val effectiveTime: String? = null,
+    @SerialName("purpose")
+    val purpose: List<String> = emptyList(),
+    @SerialName("indications_and_usage")
+    val indicationsAndUsage: List<String> = emptyList(),
+    @SerialName("dosage_and_administration")
+    val dosageAndAdministration: List<String> = emptyList(),
+    @SerialName("warnings")
+    val warnings: List<String> = emptyList(),
+    @SerialName("do_not_use")
+    val doNotUse: List<String> = emptyList(),
+    @SerialName("ask_doctor")
+    val askDoctor: List<String> = emptyList(),
+    @SerialName("stop_use")
+    val stopUse: List<String> = emptyList(),
+    @SerialName("pregnancy_or_breast_feeding")
+    val pregnancyOrBreastFeeding: List<String> = emptyList(),
+    @SerialName("keep_out_of_reach_of_children")
+    val keepOutOfReachOfChildren: List<String> = emptyList(),
+    @SerialName("openfda")
+    val openFda: OpenFdaFieldsDto? = null,
+)
+
+@Serializable
+data class OpenFdaFieldsDto(
+    @SerialName("brand_name")
+    val brandName: List<String> = emptyList(),
+    @SerialName("generic_name")
+    val genericName: List<String> = emptyList(),
+    @SerialName("substance_name")
+    val substanceName: List<String> = emptyList(),
+    @SerialName("manufacturer_name")
+    val manufacturerName: List<String> = emptyList(),
+    @SerialName("product_type")
+    val productType: List<String> = emptyList(),
+    @SerialName("rxcui")
+    val rxcui: List<String> = emptyList(),
+    @SerialName("spl_id")
+    val splId: List<String> = emptyList(),
+    @SerialName("product_ndc")
+    val productNdc: List<String> = emptyList(),
+)
