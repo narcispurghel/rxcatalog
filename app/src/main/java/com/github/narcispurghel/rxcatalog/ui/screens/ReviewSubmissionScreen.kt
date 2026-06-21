@@ -2,12 +2,7 @@
 
 package com.github.narcispurghel.rxcatalog.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -20,25 +15,32 @@ import com.github.narcispurghel.rxcatalog.ui.components.common.DetailHeader
 import com.github.narcispurghel.rxcatalog.ui.components.common.MetadataRow
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChip
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
+import com.github.narcispurghel.rxcatalog.ui.viewmodels.ReviewSubmissionUiState
 
 @Composable
-fun ReviewSubmissionScreen(submissionId: String) {
+fun ReviewSubmissionScreen(
+	state: ReviewSubmissionUiState,
+	onReviewerNoteChanged: (String) -> Unit,
+	onApprove: () -> Unit,
+	onReject: () -> Unit,
+) {
 	Column(modifier = Modifier.fillMaxSize()) {
 		TopAppBar(title = { Text("Review submission") })
 		Column(
 			modifier =
 				Modifier
-					.fillMaxSize()
+					.weight(1f)
+					.fillMaxWidth()
 					.verticalScroll(rememberScrollState())
 					.padding(20.dp),
 			verticalArrangement = Arrangement.spacedBy(16.dp),
 		) {
 			DetailHeader(
-				title = "Submission $submissionId",
-				subtitle = "Review the leaflet details, record reviewer notes, and decide the next clinical step.",
+				title = state.submission?.title ?: "Submission review",
+				subtitle =
+					state.errorMessage
+						?: "Assess the leaflet and record the reviewer note before deciding.",
 			)
-
-			ReviewSummaryCard(submissionId = submissionId)
 
 			OutlinedCard(
 				modifier = Modifier.fillMaxWidth(),
@@ -48,35 +50,77 @@ fun ReviewSubmissionScreen(submissionId: String) {
 					modifier = Modifier.padding(16.dp),
 					verticalArrangement = Arrangement.spacedBy(12.dp),
 				) {
-					Text(
-						text = "Reviewer note",
-						style = MaterialTheme.typography.titleMedium,
-					)
-					Text(
-						text = "Use this field when the submission needs clarification or a revision before approval.",
-						style = MaterialTheme.typography.bodySmall,
-						color = MaterialTheme.colorScheme.onSurfaceVariant,
-					)
-					OutlinedTextField(
-						value = "",
-						onValueChange = { },
-						placeholder = {
-							Text(
-								"Add the change needed before this leaflet can be verified",
+					if (state.submission != null) {
+						Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+							StatusChip(
+								label = state.submission.statusLabel,
+								tone = state.submission.statusLabel.toSubmissionTone(),
 							)
-						},
-						modifier = Modifier.fillMaxWidth(),
-						minLines = 4,
-						shape = MaterialTheme.shapes.extraLarge,
-						colors =
-							OutlinedTextFieldDefaults.colors(
-								focusedBorderColor = MaterialTheme.colorScheme.primary,
-								cursorColor = MaterialTheme.colorScheme.primary,
-								focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-								unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-								disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-								errorContainerColor = MaterialTheme.colorScheme.errorContainer,
-							),
+							StatusChip(
+								label = "Reviewer workflow",
+								tone = StatusChipTone.REVIEWER,
+							)
+						}
+					}
+
+					MetadataRow(
+						label = "Submission",
+						value = state.submission?.submissionId ?: "Unknown",
+					)
+					MetadataRow(
+						label = "Medicine",
+						value = state.submission?.medicineName ?: "Unknown",
+					)
+					MetadataRow(
+						label = "Submitted by",
+						value = state.submission?.submittedBy ?: "Unknown",
+					)
+					MetadataRow(
+						label = "Created",
+						value = state.submission?.createdAtLabel ?: "Pending",
+					)
+					MetadataRow(
+						label = "Updated",
+						value = state.submission?.updatedAtLabel ?: "Pending",
+					)
+					if (!state.submission?.reviewedAtLabel.isNullOrBlank()) {
+						MetadataRow(
+							label = "Reviewed",
+							value = state.submission?.reviewedAtLabel.orEmpty(),
+						)
+					}
+					if (!state.submission?.reviewedBy.isNullOrBlank()) {
+						MetadataRow(
+							label = "Reviewed by",
+							value = state.submission?.reviewedBy.orEmpty(),
+						)
+					}
+					if (!state.submission?.rejectionReason.isNullOrBlank()) {
+						MetadataRow(
+							label = "Rejection reason",
+							value = state.submission?.rejectionReason.orEmpty(),
+						)
+					}
+				}
+			}
+
+			HorizontalDivider()
+
+			OutlinedCard(
+				modifier = Modifier.fillMaxWidth(),
+				shape = MaterialTheme.shapes.extraLarge,
+			) {
+				Column(
+					modifier = Modifier.padding(16.dp),
+					verticalArrangement = Arrangement.spacedBy(12.dp),
+				) {
+					Text(text = "Submission content", style = MaterialTheme.typography.titleMedium)
+					Text(
+						text =
+							state.submission?.content
+								?: "Submission details will appear here once loaded.",
+						style = MaterialTheme.typography.bodyMedium,
+						color = MaterialTheme.colorScheme.onSurfaceVariant,
 					)
 				}
 			}
@@ -85,21 +129,28 @@ fun ReviewSubmissionScreen(submissionId: String) {
 				modifier = Modifier.fillMaxWidth(),
 				shape = MaterialTheme.shapes.extraLarge,
 			) {
-				Row(
+				Column(
 					modifier = Modifier.padding(16.dp),
-					horizontalArrangement = Arrangement.spacedBy(12.dp),
+					verticalArrangement = Arrangement.spacedBy(12.dp),
 				) {
-					Icon(
-						imageVector = Icons.Filled.ErrorOutline,
-						contentDescription = null,
-						tint = MaterialTheme.colorScheme.onSurfaceVariant,
-					)
-					Text(
-						text = "Placeholder workflow: approval and rejection controls are present for layout only in this pass.",
-						style = MaterialTheme.typography.bodySmall,
-						color = MaterialTheme.colorScheme.onSurfaceVariant,
+					Text(text = "Reviewer note", style = MaterialTheme.typography.titleMedium)
+					OutlinedTextField(
+						value = state.reviewerNote,
+						onValueChange = onReviewerNoteChanged,
+						enabled = !state.isLoading && !state.isSaving,
+						modifier = Modifier.fillMaxWidth(),
+						minLines = 4,
+						placeholder = {
+							Text(
+								"Add the change needed before this leaflet can be verified",
+							)
+						},
 					)
 				}
+			}
+
+			if (state.isLoading || state.isSaving) {
+				LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
 			}
 
 			Row(
@@ -107,72 +158,45 @@ fun ReviewSubmissionScreen(submissionId: String) {
 				horizontalArrangement = Arrangement.spacedBy(12.dp),
 			) {
 				Button(
-					onClick = { },
+					onClick = onApprove,
+					enabled = !state.isLoading && !state.isSaving && state.submission != null,
 					modifier = Modifier.weight(1f),
 				) {
 					Text("Approve")
 				}
 				OutlinedButton(
-					onClick = { },
+					onClick = onReject,
+					enabled = !state.isLoading && !state.isSaving && state.submission != null,
 					modifier = Modifier.weight(1f),
 				) {
 					Text("Reject")
 				}
 			}
-		}
-	}
-}
 
-@Composable
-private fun ReviewSummaryCard(submissionId: String) {
-	OutlinedCard(
-		modifier = Modifier.fillMaxWidth(),
-		shape = MaterialTheme.shapes.extraLarge,
-	) {
-		Column(
-			modifier = Modifier.padding(16.dp),
-			verticalArrangement = Arrangement.spacedBy(12.dp),
-		) {
 			Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-				StatusChip(
-					label = "Pending review",
-					tone = StatusChipTone.PENDING,
-				)
-				StatusChip(
-					label = "Reviewer workflow",
-					tone = StatusChipTone.REVIEWER,
-				)
-			}
-
-			Text(
-				text = "Leaflet verification",
-				style = MaterialTheme.typography.titleMedium,
-			)
-			Text(
-				text = "Submission $submissionId is ready for a clinical review pass and reviewer feedback.",
-				color = MaterialTheme.colorScheme.onSurfaceVariant,
-			)
-
-			HorizontalDivider()
-
-			Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-				MetadataRow(
-					label = "Submission",
-					value = submissionId,
-				)
-				MetadataRow(
-					label = "Submitted by",
-					value = "Placeholder reviewer handoff",
-				)
-				MetadataRow(
-					label = "Received",
-					value = "Pending timestamp",
-				)
-				MetadataRow(
-					label = "Decision",
-					value = "Approve when complete and clinically clear",
+				Icon(imageVector = Icons.Filled.ErrorOutline, contentDescription = null)
+				Text(
+					text = "Approvals and rejections write to local Room state.",
+					style = MaterialTheme.typography.bodySmall,
+					color = MaterialTheme.colorScheme.onSurfaceVariant,
 				)
 			}
 		}
 	}
 }
+
+private fun String.toSubmissionTone(): StatusChipTone =
+	when {
+		contains("approved", ignoreCase = true) -> StatusChipTone.APPROVED
+
+		contains("pending", ignoreCase = true) -> StatusChipTone.PENDING
+
+		contains(
+			"rejected",
+			ignoreCase = true,
+		) || contains("revision", ignoreCase = true) -> StatusChipTone.NEEDS_REVISION
+
+		contains("draft", ignoreCase = true) -> StatusChipTone.DRAFT
+
+		else -> StatusChipTone.REVIEWER
+	}
