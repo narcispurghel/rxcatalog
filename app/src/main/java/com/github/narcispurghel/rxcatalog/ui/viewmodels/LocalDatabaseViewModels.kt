@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.narcispurghel.rxcatalog.auth.AuthRepository
 import com.github.narcispurghel.rxcatalog.catalog.*
+import com.github.narcispurghel.rxcatalog.common.UserRole
 import com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals.ApprovalQueueItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -31,6 +32,7 @@ data class SearchResultItem(
 	val activeIngredient: String?,
 	val atcCode: String?,
 	val description: String?,
+	val hasApprovedLeaflet: Boolean = false,
 )
 
 data class HomeUiState(
@@ -51,18 +53,45 @@ data class HomeFeaturedMedicineItem(
 class HomeViewModel
 	@Inject
 	constructor(
+		authRepository: AuthRepository,
 		private val catalogRepository: CatalogRepository,
 	) : ViewModel() {
+		private val reviewSummaryFlow =
+			authRepository
+				.observeCurrentUser()
+				.flatMapLatest { user ->
+					when {
+						user == null -> flowOf(HomeReviewSummary())
+						user.role in reviewerRoles ->
+							catalogRepository.observePendingApprovals().map { pendingApprovals ->
+								HomeReviewSummary(
+									count = pendingApprovals.size,
+									medicineNames = pendingApprovals.map { it.medicineName }.toSet(),
+								)
+							}
+						else ->
+							catalogRepository.observeSubmissionsForUser(user.userId).map { submissions ->
+								val pendingSubmissions =
+									submissions.filter {
+										it.statusLabel.equals("Pending review", ignoreCase = true)
+									}
+								HomeReviewSummary(
+									count = pendingSubmissions.size,
+									medicineNames = pendingSubmissions.map { it.medicineName }.toSet(),
+								)
+							}
+					}
+				}
+
 		val uiState: StateFlow<HomeUiState> =
 			combine(
 				catalogRepository.observeMedicines(""),
-				catalogRepository.observePendingApprovals(),
-			) { medicines, pendingApprovals ->
-				val pendingMedicineNames = pendingApprovals.map { it.medicineName }.toSet()
+				reviewSummaryFlow,
+			) { medicines, reviewSummary ->
 				HomeUiState(
 					isLoading = false,
 					medicineCount = medicines.size,
-					pendingApprovalsCount = pendingApprovals.size,
+					pendingApprovalsCount = reviewSummary.count,
 					featuredMedicines =
 						medicines
 							.take(3)
@@ -71,7 +100,7 @@ class HomeViewModel
 									medicineId = medicine.medicineId,
 									name = medicine.canonicalName,
 									detail = medicine.toFeaturedDetail(),
-									hasPendingReview = medicine.canonicalName in pendingMedicineNames,
+									hasPendingReview = medicine.canonicalName in reviewSummary.medicineNames,
 								)
 							},
 				)
@@ -85,6 +114,13 @@ class HomeViewModel
 				initialValue = HomeUiState(),
 			)
 	}
+
+private data class HomeReviewSummary(
+	val count: Int = 0,
+	val medicineNames: Set<String> = emptySet(),
+)
+
+private val reviewerRoles = setOf(UserRole.DOCTOR, UserRole.PHARMACIST)
 
 private fun MedicineListItem.toFeaturedDetail(): String =
 	listOfNotNull(
@@ -386,6 +422,7 @@ private fun MedicineListItem.toSearchResultItem(): SearchResultItem =
 		activeIngredient = activeIngredient,
 		atcCode = atcCode,
 		description = description,
+		hasApprovedLeaflet = hasApprovedLeaflet,
 	)
 
 private fun SubmissionListItem.toSubmissionItem(): MySubmissionItem =

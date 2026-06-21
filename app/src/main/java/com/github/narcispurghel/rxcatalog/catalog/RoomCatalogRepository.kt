@@ -5,14 +5,19 @@ package com.github.narcispurghel.rxcatalog.catalog
 import androidx.room.withTransaction
 import com.github.narcispurghel.rxcatalog.auth.PasswordHasher
 import com.github.narcispurghel.rxcatalog.network.CatalogApiService
+import com.github.narcispurghel.rxcatalog.network.OpenFdaApiService
 import com.github.narcispurghel.rxcatalog.network.dto.ApprovedLeafletDto
 import com.github.narcispurghel.rxcatalog.network.dto.MedicineDto
+import com.github.narcispurghel.rxcatalog.network.dto.OpenFdaDrugLabelDto
+import com.github.narcispurghel.rxcatalog.network.dto.OpenFdaFieldsDto
 import com.github.narcispurghel.rxcatalog.persistence.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.nio.charset.StandardCharsets
+import java.util.UUID
 import kotlin.uuid.Uuid
 
 @Singleton
@@ -27,6 +32,7 @@ class RoomCatalogRepository
 		private val userDao: UserDao,
 		private val passwordHasher: PasswordHasher,
 		private val catalogApiService: CatalogApiService,
+		private val openFdaApiService: OpenFdaApiService,
 	) : CatalogRepository {
 		private val seedMutex = Mutex()
 
@@ -43,7 +49,16 @@ class RoomCatalogRepository
 						medicineDao.search(query)
 					}
 
-				emitAll(medicineFlow.map { medicines -> medicines.map { it.toMedicineListItem() } })
+				emitAll(
+					medicineFlow.combine(approvedLeafletDao.observeAll()) { medicines, leaflets ->
+						val medicineIdsWithLeaflets = leaflets.map { it.medicineId }.toSet()
+						medicines.map { medicine ->
+							medicine.toMedicineListItem(
+								hasApprovedLeaflet = medicine.medicineId in medicineIdsWithLeaflets,
+							)
+						}
+					},
+				)
 			}
 
 		override fun observeMedicineDetails(medicineId: Uuid): Flow<MedicineDetailsItem?> =
@@ -145,35 +160,52 @@ class RoomCatalogRepository
 		}
 
 		override suspend fun refreshMedicines(query: String) {
-			val response = catalogApiService.searchMedicines(query.takeIf { it.isNotBlank() })
+			val response =
+				openFdaApiService.searchDrugLabels(
+					search = query.toOpenFdaMedicineSearch(),
+				)
 			val now = System.currentTimeMillis()
 			val currentMedicines = medicineDao.observeAll().first().associateBy { it.medicineId }
 			val remoteMedicines =
-				response.items.map { dto ->
-					dto.toMedicineEntity(currentMedicines[dto.id.toUuid()]?.createdAt ?: now, now)
+				response.results
+					.mapNotNull { dto ->
+						dto.toMedicineEntity(currentMedicines, now)?.let { medicine -> dto to medicine }
+					}.distinctBy { (_, medicine) -> medicine.medicineId }
+			medicineDao.upsertAll(remoteMedicines.map { (_, medicine) -> medicine })
+			remoteMedicines.forEach { (dto, medicine) ->
+				dto.toOpenFdaApprovedLeaflet(
+					medicine = medicine,
+					now = now,
+					currentLeaflet = approvedLeafletDao.getByMedicineId(medicine.medicineId),
+				)?.let { approvedLeaflet ->
+					approvedLeafletDao.upsert(approvedLeaflet)
 				}
-			medicineDao.upsertAll(remoteMedicines)
+			}
 		}
 
 		override suspend fun refreshMedicineDetails(medicineId: Uuid) {
-			val response = catalogApiService.getMedicineDetails(medicineId.toString())
-			val now = System.currentTimeMillis()
 			val currentMedicine = medicineDao.getById(medicineId)
-			medicineDao.upsert(
-				response.medicine.toMedicineEntity(
-					createdAt = currentMedicine?.createdAt ?: now,
-					updatedAt = response.medicine.lastUpdatedAt ?: now,
-				),
-			)
-
-			val currentLeaflet = approvedLeafletDao.getByMedicineId(medicineId)
-			val approvedLeaflet = response.approvedLeaflet
-			if (approvedLeaflet == null) {
-				if (currentLeaflet != null) {
-					approvedLeafletDao.delete(currentLeaflet)
-				}
-			} else {
-				upsertApprovedLeaflet(approvedLeaflet, now, currentLeaflet)
+			val searchQuery = currentMedicine?.toOpenFdaDetailSearch() ?: return
+			val response =
+				openFdaApiService.searchDrugLabels(
+					search = searchQuery,
+					limit = 1,
+				)
+			val drugLabel = response.results.firstOrNull() ?: return
+			val now = System.currentTimeMillis()
+			val updatedMedicine =
+				drugLabel.toMedicineEntity(
+					medicineId = medicineId,
+					currentMedicine = currentMedicine,
+					now = now,
+				)
+			medicineDao.upsert(updatedMedicine)
+			drugLabel.toOpenFdaApprovedLeaflet(
+				medicine = updatedMedicine,
+				now = now,
+				currentLeaflet = approvedLeafletDao.getByMedicineId(medicineId),
+			)?.let { approvedLeaflet ->
+				approvedLeafletDao.upsert(approvedLeaflet)
 			}
 		}
 
@@ -208,6 +240,7 @@ class RoomCatalogRepository
 			submittedByUserId: Uuid,
 			title: String,
 			content: String,
+			isUrgent: Boolean,
 		): Uuid {
 			ensureSeedData()
 			val now = System.currentTimeMillis()
@@ -225,6 +258,7 @@ class RoomCatalogRepository
 					title = title,
 					content = content,
 					status = SubmissionStatus.DRAFT,
+					isUrgent = isUrgent,
 					rejectionReason = null,
 					createdAt = currentSubmission?.createdAt ?: now,
 					updatedAt = now,
@@ -309,7 +343,9 @@ class RoomCatalogRepository
 			}
 		}
 
-		private fun MedicineEntity.toMedicineListItem(): MedicineListItem =
+		private fun MedicineEntity.toMedicineListItem(
+			hasApprovedLeaflet: Boolean,
+		): MedicineListItem =
 			MedicineListItem(
 				medicineId = medicineId.toString(),
 				canonicalName = canonicalName,
@@ -317,6 +353,7 @@ class RoomCatalogRepository
 				activeIngredient = activeIngredient,
 				atcCode = atcCode,
 				description = description,
+				hasApprovedLeaflet = hasApprovedLeaflet,
 			)
 
 		private fun MedicineEntity.toMedicineDetailsItem(
@@ -383,7 +420,7 @@ class RoomCatalogRepository
 				medicineName = medicine.canonicalName,
 				submittedBy = submitter.displayName,
 				createdAtLabel = createdAt.toRelativeLabel(),
-				isUrgent = isUrgent(),
+				isUrgent = isUrgent,
 			)
 
 		private fun SubmittedLeafletEntity.toSubmissionDetailsItem(
@@ -399,6 +436,7 @@ class RoomCatalogRepository
 				title = title,
 				content = content,
 				statusLabel = status.toLabel(),
+				isUrgent = isUrgent,
 				createdAtLabel = "Submitted ${createdAt.toRelativeLabel()}",
 				updatedAtLabel = "Updated ${updatedAt.toRelativeLabel()}",
 				reviewedAtLabel = reviewedAt?.let { "Reviewed ${it.toRelativeLabel()}" },
@@ -421,10 +459,6 @@ class RoomCatalogRepository
 				SubmissionStatus.REJECTED -> "Rejected"
 				SubmissionStatus.WITHDRAWN -> "Withdrawn"
 			}
-
-		private fun SubmittedLeafletEntity.isUrgent(): Boolean =
-			status == SubmissionStatus.PENDING_REVIEW &&
-				System.currentTimeMillis() - createdAt <= 2 * HOUR
 
 		private suspend fun upsertApprovedLeaflet(
 			dto: ApprovedLeafletDto,
@@ -486,5 +520,177 @@ class RoomCatalogRepository
 				syncStatus = com.github.narcispurghel.rxcatalog.persistence.SyncStatus.SYNCED,
 			)
 
+		private fun OpenFdaDrugLabelDto.toMedicineEntity(
+			currentMedicines: Map<Uuid, MedicineEntity>,
+			now: Long,
+		): MedicineEntity? {
+			val fields = openFda ?: return null
+			val productName =
+				fields.brandName.firstClean()
+					?: fields.genericName.firstClean()
+					?: fields.substanceName.firstClean()
+					?: return null
+			val activeIngredient =
+				fields.substanceName.firstClean()
+					?: fields.genericName.firstClean()
+			val medicineId = stableOpenFdaMedicineId(fields, setId, productName)
+			val currentMedicine = currentMedicines[medicineId]
+
+			return MedicineEntity(
+				medicineId = medicineId,
+				canonicalName = productName,
+				brandName = null,
+				activeIngredient = activeIngredient,
+				atcCode = null,
+				description = null,
+				createdAt = currentMedicine?.createdAt ?: now,
+				updatedAt = now,
+				syncStatus = com.github.narcispurghel.rxcatalog.persistence.SyncStatus.SYNCED,
+			)
+		}
+
+		private fun OpenFdaDrugLabelDto.toMedicineEntity(
+			medicineId: Uuid,
+			currentMedicine: MedicineEntity?,
+			now: Long,
+		): MedicineEntity {
+			val fields = openFda
+			val productName =
+				fields?.brandName?.firstClean()
+					?: fields?.genericName?.firstClean()
+					?: fields?.substanceName?.firstClean()
+					?: currentMedicine?.canonicalName
+					?: "Medicine"
+			val activeIngredient =
+				fields?.substanceName?.firstClean()
+					?: fields?.genericName?.firstClean()
+					?: currentMedicine?.activeIngredient
+			val description =
+				purpose.firstClean()
+					?: indicationsAndUsage.firstClean()
+					?: currentMedicine?.description
+
+			return MedicineEntity(
+				medicineId = medicineId,
+				canonicalName = productName,
+				brandName = fields?.brandName?.firstClean(),
+				activeIngredient = activeIngredient,
+				atcCode = currentMedicine?.atcCode,
+				description = description,
+				createdAt = currentMedicine?.createdAt ?: now,
+				updatedAt = now,
+				syncStatus = com.github.narcispurghel.rxcatalog.persistence.SyncStatus.SYNCED,
+			)
+		}
+
+		private fun OpenFdaDrugLabelDto.toOpenFdaApprovedLeaflet(
+			medicine: MedicineEntity,
+			now: Long,
+			currentLeaflet: ApprovedLeafletEntity?,
+		): ApprovedLeafletEntity? {
+			val sections =
+				listOfNotNull(
+					purpose.firstClean()?.let { "Purpose\n$it" },
+					indicationsAndUsage.firstClean()?.let { "Indications and usage\n$it" },
+					dosageAndAdministration.firstClean()?.let { "Dosage and administration\n$it" },
+					warnings.firstClean()?.let { "Warnings\n$it" },
+					doNotUse.firstClean()?.let { "Do not use\n$it" },
+					askDoctor.firstClean()?.let { "Ask a doctor\n$it" },
+					stopUse.firstClean()?.let { "Stop use\n$it" },
+					pregnancyOrBreastFeeding.firstClean()?.let { "Pregnancy or breast-feeding\n$it" },
+					keepOutOfReachOfChildren.firstClean()?.let {
+						"Keep out of reach of children\n$it"
+					},
+				)
+			if (sections.isEmpty()) return null
+
+			val approvedAt = effectiveTime.toEpochMillisOrNull() ?: now
+			return ApprovedLeafletEntity(
+				leafletId = currentLeaflet?.leafletId ?: stableLeafletId(medicine.medicineId),
+				medicineId = medicine.medicineId,
+				sourceSubmissionId = currentLeaflet?.sourceSubmissionId,
+				approvedByUserId = currentLeaflet?.approvedByUserId,
+				title = "${medicine.canonicalName} OpenFDA label",
+				content = sections.joinToString("\n\n"),
+				version = currentLeaflet?.version ?: 1,
+				approvedAt = approvedAt,
+				createdAt = currentLeaflet?.createdAt ?: approvedAt,
+				updatedAt = now,
+				syncStatus = com.github.narcispurghel.rxcatalog.persistence.SyncStatus.SYNCED,
+			)
+		}
+
+		private fun stableOpenFdaMedicineId(
+			fields: OpenFdaFieldsDto,
+			setId: String?,
+			canonicalName: String,
+		): Uuid {
+			val stableKey =
+				listOfNotNull(
+					fields.rxcui.firstClean()?.let { "rxcui:$it" },
+					fields.productNdc.firstClean()?.let { "product_ndc:$it" },
+					fields.splId.firstClean()?.let { "spl_id:$it" },
+					setId?.takeIf { it.isNotBlank() }?.let { "set_id:$it" },
+					fields.brandName.firstClean()?.let { "brand:$it|generic:$canonicalName" },
+					"openfda:$canonicalName",
+				).first()
+
+			return Uuid.parse(
+				UUID
+					.nameUUIDFromBytes(stableKey.toByteArray(StandardCharsets.UTF_8))
+					.toString(),
+			)
+		}
+
+		private fun String.toOpenFdaMedicineSearch(): String =
+			trim()
+				.takeIf { it.isNotBlank() }
+				?.let { query ->
+					val escapedQuery = query.replace("\"", "\\\"")
+					"openfda.brand_name:\"$escapedQuery\" OR " +
+						"openfda.generic_name:\"$escapedQuery\" OR " +
+					"openfda.substance_name:\"$escapedQuery\""
+				} ?: "_exists_:openfda.brand_name"
+
+		private fun MedicineEntity.toOpenFdaDetailSearch(): String =
+			listOfNotNull(
+				brandName?.takeIf { it.isNotBlank() }?.let {
+					"openfda.brand_name:${it.quoteForOpenFda()}"
+				},
+				canonicalName.takeIf { it.isNotBlank() }?.let {
+					"openfda.generic_name:${it.quoteForOpenFda()}"
+				},
+				activeIngredient?.takeIf { it.isNotBlank() }?.let {
+					"openfda.substance_name:${it.quoteForOpenFda()}"
+				},
+			).joinToString(" OR ")
+
+		private fun String.quoteForOpenFda(): String = "\"${replace("\"", "\\\"")}\""
+
+		private fun List<String>.firstClean(): String? =
+			firstOrNull { it.isNotBlank() }
+				?.replace(Regex("\\s+"), " ")
+				?.trim()
+
 		private fun String.toUuid(): Uuid = Uuid.parse(this)
+
+		private fun stableLeafletId(medicineId: Uuid): Uuid =
+			Uuid.parse(
+				UUID
+					.nameUUIDFromBytes(
+						"openfda-leaflet:$medicineId".toByteArray(StandardCharsets.UTF_8),
+					).toString(),
+			)
+
+		private fun String?.toEpochMillisOrNull(): Long? {
+			if (this == null || length != 8) return null
+			val year = substring(0, 4).toIntOrNull() ?: return null
+			val month = substring(4, 6).toIntOrNull() ?: return null
+			val day = substring(6, 8).toIntOrNull() ?: return null
+			return java.time.LocalDate
+				.of(year, month, day)
+				.atStartOfDay(java.time.ZoneOffset.UTC)
+				.toInstant()
+				.toEpochMilli()
+		}
 	}

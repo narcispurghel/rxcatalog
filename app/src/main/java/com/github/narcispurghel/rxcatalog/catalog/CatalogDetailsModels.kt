@@ -36,6 +36,7 @@ data class SubmissionDetailsItem(
     val title: String,
     val content: String,
     val statusLabel: String,
+    val isUrgent: Boolean,
     val createdAtLabel: String,
     val updatedAtLabel: String,
     val reviewedAtLabel: String?,

@@ -189,7 +189,7 @@ private fun HomeHero(
 			Modifier
 				.fillMaxWidth()
 				.clip(heroShape)
-				.background(MaterialTheme.colorScheme.primaryContainer)
+				.background(MaterialTheme.colorScheme.surfaceVariant)
 				.padding(22.dp),
 	) {
 		Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -252,7 +252,7 @@ private fun HomeHero(
 				)
 				HeroMetric(
 					value = homeState.pendingApprovalsCount.toStatValue(homeState.isLoading),
-					label = if (isReviewer) "pending reviews" else "catalog reviews",
+					label = if (isReviewer) "pending reviews" else "my pending",
 					icon = if (isReviewer) Icons.Filled.PendingActions else Icons.Filled.EditNote,
 					modifier = Modifier.weight(1f),
 				)
@@ -546,7 +546,7 @@ private fun FeaturedMedicineRow(
 	) {
 		Row(
 			modifier = Modifier.padding(14.dp),
-			verticalAlignment = Alignment.CenterVertically,
+			verticalAlignment = Alignment.Top,
 			horizontalArrangement = Arrangement.spacedBy(12.dp),
 		) {
 			Box(
@@ -589,6 +589,7 @@ private fun FeaturedMedicineRow(
 					} else {
 						StatusChipTone.DRAFT
 					},
+				modifier = Modifier.align(Alignment.Top),
 			)
 		}
 	}

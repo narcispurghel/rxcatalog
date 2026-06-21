@@ -30,6 +30,7 @@ interface CatalogRepository {
         submittedByUserId: Uuid,
         title: String,
         content: String,
+        isUrgent: Boolean,
     ): Uuid
 
     suspend fun submitForReview(submissionId: Uuid, reviewedAt: Long = System.currentTimeMillis())

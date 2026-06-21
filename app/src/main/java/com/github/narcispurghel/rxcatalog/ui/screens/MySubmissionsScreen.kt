@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.ui.components.common.MetadataRow
+import com.github.narcispurghel.rxcatalog.ui.components.common.RxCatalogTopAppBar
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChip
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.MySubmissionItem
@@ -26,7 +27,7 @@ fun MySubmissionsScreen(
 	onEdit: (String) -> Unit,
 ) {
 	Column(modifier = Modifier.fillMaxSize()) {
-		TopAppBar(title = { Text("My submissions") })
+		RxCatalogTopAppBar(title = "My submissions")
 		LazyColumn(
 			modifier =
 				Modifier

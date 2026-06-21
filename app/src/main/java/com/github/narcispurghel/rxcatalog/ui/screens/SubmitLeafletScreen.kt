@@ -14,11 +14,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.ui.components.common.DetailHeader
 import com.github.narcispurghel.rxcatalog.ui.components.common.MetadataRow
+import com.github.narcispurghel.rxcatalog.ui.components.common.RxCatalogTopAppBar
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChip
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.SubmissionMedicineOption
@@ -30,12 +32,13 @@ fun SubmitLeafletScreen(
 	onMedicineSelected: (String) -> Unit,
 	onTitleChanged: (String) -> Unit,
 	onContentChanged: (String) -> Unit,
+	onUrgentChanged: (Boolean) -> Unit,
 	onSaveDraft: () -> Unit,
 	onSubmitForReview: () -> Unit,
 ) {
 	val isReadOnly = state.submission?.statusLabel.equals("Approved", ignoreCase = true)
 	Column(modifier = Modifier.fillMaxSize()) {
-		TopAppBar(title = { Text("Submit leaflet") })
+		RxCatalogTopAppBar(title = "Submit leaflet")
 		Column(
 			modifier =
 				Modifier
@@ -117,6 +120,28 @@ fun SubmitLeafletScreen(
 						placeholder = { Text("Describe the leaflet details to review") },
 						minLines = 8,
 					)
+					Row(
+						modifier = Modifier.fillMaxWidth(),
+						horizontalArrangement = Arrangement.spacedBy(12.dp),
+						verticalAlignment = Alignment.CenterVertically,
+					) {
+						Checkbox(
+							checked = state.isUrgent,
+							onCheckedChange = onUrgentChanged,
+							enabled = !state.isLoading && !state.isSaving && !isReadOnly,
+						)
+						Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+							Text(
+								text = "Mark as urgent",
+								style = MaterialTheme.typography.bodyLarge,
+							)
+							Text(
+								text = "Priority queue",
+								style = MaterialTheme.typography.bodySmall,
+								color = MaterialTheme.colorScheme.onSurfaceVariant,
+							)
+						}
+					}
 					if (isReadOnly) {
 						Text(
 							text = "Approved submissions are read-only.",

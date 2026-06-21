@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.catalog.MedicineDetailsItem
 import com.github.narcispurghel.rxcatalog.ui.components.common.MetadataRow
 import com.github.narcispurghel.rxcatalog.ui.components.common.RecordCard
+import com.github.narcispurghel.rxcatalog.ui.components.common.RxCatalogTopAppBar
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChip
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.MedicineDetailsUiState
@@ -29,7 +30,7 @@ fun MedicineDetailsScreen(
 ) {
 	val medicine = state.medicine
 	Column(modifier = Modifier.fillMaxSize()) {
-		TopAppBar(title = { Text("Medicine") })
+		RxCatalogTopAppBar(title = "Medicine")
 		LazyColumn(
 			modifier = Modifier.fillMaxSize(),
 			contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),

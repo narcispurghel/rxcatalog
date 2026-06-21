@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.github.narcispurghel.rxcatalog.ui.components.common.RxCatalogTopAppBar
 import com.github.narcispurghel.rxcatalog.ui.components.search.MedicineSearchCard
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.SearchUiState
 
@@ -27,7 +28,7 @@ fun SearchScreen(
 	onSubmit: () -> Unit,
 ) {
 	Column(modifier = Modifier.fillMaxSize()) {
-		TopAppBar(title = { Text("Search medicines") })
+		RxCatalogTopAppBar(title = "Search medicines")
 		LazyColumn(
 			modifier =
 				Modifier

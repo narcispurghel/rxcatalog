@@ -330,6 +330,7 @@ private fun SubmitLeafletRoute(
 					onMedicineSelected = viewModel::onMedicineSelected,
 					onTitleChanged = viewModel::onTitleChanged,
 					onContentChanged = viewModel::onContentChanged,
+					onUrgentChanged = viewModel::onUrgentChanged,
 					onSaveDraft = viewModel::saveDraft,
 					onSubmitForReview = viewModel::submitForReview,
 				)

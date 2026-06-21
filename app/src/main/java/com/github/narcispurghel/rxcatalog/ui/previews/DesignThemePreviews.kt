@@ -118,6 +118,7 @@ private val previewSearchState =
 					activeIngredient = "Acetylsalicylic acid",
 					atcCode = "B01AC06",
 					description = "Verified leaflet available for cardiovascular prevention guidance.",
+					hasApprovedLeaflet = true,
 				),
 				SearchResultItem(
 					medicineId = CatalogSeedIds.PARACETAMOL_MEDICINE_ID,
@@ -126,6 +127,7 @@ private val previewSearchState =
 					activeIngredient = "Paracetamol",
 					atcCode = "N02BE01",
 					description = "Leaflet update pending reviewer confirmation.",
+					hasApprovedLeaflet = false,
 				),
 			),
 	)
