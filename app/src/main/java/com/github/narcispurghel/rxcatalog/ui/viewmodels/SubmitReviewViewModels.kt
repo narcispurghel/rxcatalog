@@ -34,6 +34,7 @@ private data class SubmissionDraftContent(
 	val selection: SubmissionDraftSelection,
 	val title: String,
 	val content: String,
+	val isUrgent: Boolean,
 )
 
 data class SubmitLeafletUiState(
@@ -46,6 +47,7 @@ data class SubmitLeafletUiState(
 	val canEditMedicineId: Boolean = true,
 	val title: String = "",
 	val content: String = "",
+	val isUrgent: Boolean = false,
 	val isSaving: Boolean = false,
 )
 
@@ -69,6 +71,7 @@ class SubmitLeafletViewModel
 			MutableStateFlow(savedStateHandle.get<String>("medicineId").orEmpty())
 		private val titleState = MutableStateFlow("")
 		private val contentState = MutableStateFlow("")
+		private val isUrgentState = MutableStateFlow(false)
 		private val isSavingState = MutableStateFlow(false)
 		private val errorMessageState = MutableStateFlow<String?>(null)
 		private val draftHydratedState = MutableStateFlow(false)
@@ -99,6 +102,7 @@ class SubmitLeafletViewModel
 						medicineIdState.value = submission.medicineId
 						titleState.value = submission.title
 						contentState.value = submission.content
+						isUrgentState.value = submission.isUrgent
 						draftHydratedState.value = true
 					}
 				}.launchIn(viewModelScope)
@@ -122,11 +126,16 @@ class SubmitLeafletViewModel
 					selection = selection,
 					title = title,
 					content = "",
+					isUrgent = false,
 				)
 			}.combine(
 				contentState,
 			) { draftContent, content ->
 				draftContent.copy(content = content)
+			}.combine(
+				isUrgentState,
+			) { draftContent, isUrgent ->
+				draftContent.copy(isUrgent = isUrgent)
 			}.combine(
 				isSavingState,
 			) { draftContent, saving ->
@@ -135,6 +144,7 @@ class SubmitLeafletViewModel
 				val medicineId = draftContent.selection.medicineId
 				val title = draftContent.title
 				val content = draftContent.content
+				val isUrgent = draftContent.isUrgent
 				val selectedMedicineLabel =
 					submission?.medicineName
 						?: availableMedicines.firstOrNull { it.medicineId == medicineId }?.title
@@ -147,6 +157,7 @@ class SubmitLeafletViewModel
 					canEditMedicineId = submission == null,
 					title = title,
 					content = content,
+					isUrgent = isUrgent,
 					isSaving = saving,
 				)
 			}
@@ -186,6 +197,11 @@ class SubmitLeafletViewModel
 		fun onContentChanged(value: String) {
 			errorMessageState.value = null
 			contentState.value = value
+		}
+
+		fun onUrgentChanged(value: Boolean) {
+			errorMessageState.value = null
+			isUrgentState.value = value
 		}
 
 		fun saveDraft() {
@@ -258,6 +274,7 @@ class SubmitLeafletViewModel
 					submittedByUserId = userId,
 					title = titleState.value,
 					content = contentState.value,
+					isUrgent = isUrgentState.value,
 				)
 			submissionIdState.value = savedSubmissionId
 			draftHydratedState.value = true

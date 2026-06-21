@@ -15,7 +15,7 @@ import androidx.room.TypeConverters
         ApprovalHistoryEntity::class,
         FavoriteEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 @TypeConverters(PersistenceConverters::class)

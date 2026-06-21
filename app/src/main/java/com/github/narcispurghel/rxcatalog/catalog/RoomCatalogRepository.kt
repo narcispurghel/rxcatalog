@@ -240,6 +240,7 @@ class RoomCatalogRepository
 			submittedByUserId: Uuid,
 			title: String,
 			content: String,
+			isUrgent: Boolean,
 		): Uuid {
 			ensureSeedData()
 			val now = System.currentTimeMillis()
@@ -257,6 +258,7 @@ class RoomCatalogRepository
 					title = title,
 					content = content,
 					status = SubmissionStatus.DRAFT,
+					isUrgent = isUrgent,
 					rejectionReason = null,
 					createdAt = currentSubmission?.createdAt ?: now,
 					updatedAt = now,
@@ -418,7 +420,7 @@ class RoomCatalogRepository
 				medicineName = medicine.canonicalName,
 				submittedBy = submitter.displayName,
 				createdAtLabel = createdAt.toRelativeLabel(),
-				isUrgent = isUrgent(),
+				isUrgent = isUrgent,
 			)
 
 		private fun SubmittedLeafletEntity.toSubmissionDetailsItem(
@@ -434,6 +436,7 @@ class RoomCatalogRepository
 				title = title,
 				content = content,
 				statusLabel = status.toLabel(),
+				isUrgent = isUrgent,
 				createdAtLabel = "Submitted ${createdAt.toRelativeLabel()}",
 				updatedAtLabel = "Updated ${updatedAt.toRelativeLabel()}",
 				reviewedAtLabel = reviewedAt?.let { "Reviewed ${it.toRelativeLabel()}" },
@@ -456,10 +459,6 @@ class RoomCatalogRepository
 				SubmissionStatus.REJECTED -> "Rejected"
 				SubmissionStatus.WITHDRAWN -> "Withdrawn"
 			}
-
-		private fun SubmittedLeafletEntity.isUrgent(): Boolean =
-			status == SubmissionStatus.PENDING_REVIEW &&
-				System.currentTimeMillis() - createdAt <= 2 * HOUR
 
 		private suspend fun upsertApprovedLeaflet(
 			dto: ApprovedLeafletDto,

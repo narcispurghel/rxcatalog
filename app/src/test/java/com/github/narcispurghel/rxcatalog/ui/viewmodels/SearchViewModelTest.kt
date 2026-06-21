@@ -71,6 +71,7 @@ private class FakeCatalogRepository : CatalogRepository {
 		submittedByUserId: Uuid,
 		title: String,
 		content: String,
+		isUrgent: Boolean,
 	): Uuid = Uuid.random()
 
 	override suspend fun submitForReview(

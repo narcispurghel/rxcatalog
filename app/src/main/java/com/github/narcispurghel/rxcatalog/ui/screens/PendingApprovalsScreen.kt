@@ -5,12 +5,11 @@ package com.github.narcispurghel.rxcatalog.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.ui.components.common.DetailHeader
+import com.github.narcispurghel.rxcatalog.ui.components.common.RxCatalogTopAppBar
 import com.github.narcispurghel.rxcatalog.ui.components.pendingapprovals.*
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.PendingApprovalsUiState
 
@@ -21,7 +20,7 @@ fun PendingApprovalsScreen(
 ) {
 	val queue = state.queue
 	Column(modifier = Modifier.fillMaxSize()) {
-		TopAppBar(title = { Text("Pending approvals") })
+		RxCatalogTopAppBar(title = "Pending approvals")
 		LazyColumn(
 			modifier =
 				Modifier

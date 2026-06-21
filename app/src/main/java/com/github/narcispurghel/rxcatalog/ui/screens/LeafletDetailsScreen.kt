@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.github.narcispurghel.rxcatalog.catalog.LeafletDetailsItem
 import com.github.narcispurghel.rxcatalog.ui.components.common.MetadataRow
 import com.github.narcispurghel.rxcatalog.ui.components.common.RecordCard
+import com.github.narcispurghel.rxcatalog.ui.components.common.RxCatalogTopAppBar
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChip
 import com.github.narcispurghel.rxcatalog.ui.components.common.StatusChipTone
 import com.github.narcispurghel.rxcatalog.ui.viewmodels.LeafletDetailsUiState
@@ -24,7 +25,7 @@ import com.github.narcispurghel.rxcatalog.ui.viewmodels.LeafletDetailsUiState
 fun LeafletDetailsScreen(state: LeafletDetailsUiState) {
 	val leaflet = state.leaflet
 	Column(modifier = Modifier.fillMaxSize()) {
-		TopAppBar(title = { Text("Leaflet") })
+		RxCatalogTopAppBar(title = "Leaflet")
 		LazyColumn(
 			modifier = Modifier.fillMaxSize(),
 			contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),

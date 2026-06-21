@@ -2,6 +2,7 @@
 
 package com.github.narcispurghel.rxcatalog.persistence
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -50,6 +51,8 @@ data class SubmittedLeafletEntity(
     val title: String,
     val content: String,
     val status: SubmissionStatus,
+    @ColumnInfo(defaultValue = "0")
+    val isUrgent: Boolean = false,
     val rejectionReason: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
