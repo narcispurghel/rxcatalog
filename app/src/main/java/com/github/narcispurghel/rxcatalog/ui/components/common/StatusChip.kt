@@ -1,10 +1,16 @@
 package com.github.narcispurghel.rxcatalog.ui.components.common
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 
 enum class StatusChipTone {
 	APPROVED,
@@ -25,26 +31,30 @@ fun StatusChip(
 ) {
 	val palette = tonePalette(tone)
 
-	AssistChip(
-		onClick = {},
+	Surface(
 		modifier = modifier,
-		enabled = false,
-		colors =
-			AssistChipDefaults.assistChipColors(
-				containerColor = palette.container,
-				labelColor = palette.content,
-				leadingIconContentColor = palette.content,
-				disabledContainerColor = palette.container,
-				disabledLabelColor = palette.content,
-				disabledLeadingIconContentColor = palette.content,
-			),
-		label = {
+		shape = MaterialTheme.shapes.small,
+		color = palette.container,
+		contentColor = palette.content,
+	) {
+		Row(
+			modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+			horizontalArrangement = Arrangement.spacedBy(6.dp),
+			verticalAlignment = Alignment.CenterVertically,
+		) {
+			icon?.let {
+				Icon(
+					imageVector = it,
+					contentDescription = null,
+					modifier = Modifier.size(16.dp),
+				)
+			}
 			Text(
 				text = label,
 				style = MaterialTheme.typography.labelMedium,
 			)
-		},
-	)
+		}
+	}
 }
 
 private data class TonePalette(
